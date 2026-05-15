@@ -1,0 +1,176 @@
+
+func calc[int](int oper,int a,int b){
+	if(oper==0){
+		ret a+b;
+	}else(oper==1){
+		ret a-b;
+	}else(oper==2){
+		ret a*b;
+	}else(oper==3){
+		ret a/b;
+	}
+}
+
+func main[int](){
+	int running = 1;
+	int clock = 0;
+	int pc=0;
+	while(running){
+		sleep(250);
+		//tuti(clock);
+		//tut("\n");
+		pc+=1;
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		if(clock==0){
+			clock=1;
+		}else{
+			clock=0;
+		}
+	}
+	ret 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/'' /*
+func main[int](){
+	int op = 0;
+	int a = 3;
+	int b = 2;
+	int result = 0;
+	if(op==0){//add
+		result = a + b;
+	}else(op==1){//sub
+		result = a - b;
+	}else(op==2){//mul
+		result = a * b;
+	}else(op==3){//div
+		result = a / b;
+	}
+	ret result;
+}
+
+func main[int](){
+	int a = 1;
+	a+=1;
+	ret a;
+}
+
+func main[int](){
+	int a = 3;
+	if(a>2){
+		ret a;
+	}
+	ret 1;
+}
+
+func main[int](){
+	int a = 3;
+	ret a + 5;
+}
+
+func main[int](){
+	int a = 3;
+	ret a;
+}
+
+func main[int](){
+	ret 52;
+}
+*/ ''/
+
+
+
+
+
+
+/'' /*
+FUNCTION    main 0 1
+RET_I32
+ASSIGN_I32  r0 3
+ASSIGN      r1 r0
+RET1        r0
+END_FUNCTION
+
+CALL1       main r0
+EXIT        r0
+END_PROGRAM
+*/ ''/
+
+
+/'' /*
+func div[int,int](int a,int b){
+	ret a/b,a%b;
+}
+-1 + ((1 - 2) * 3) + 4.0 / +2 * a
+!((5 + 3 * 2 % 4) > 6) && (10 / 2 != 5 || 7 <= 3 ^ 1) & (15 | 4) == ~2 - -8
+!1 == 2 != 3 > 4 < 5 >= 6 <= 7 || 8 && 9
+-1 + 2 - 3 * +4 / 5 % 6
+~1 ^ 2 | 3 & 4
+*/ ''/
+
+
+
+/'' /*
+1 0x1 0b1 3.14
+"string"
+== != > < >= <= || &&
++ - * / % ~ ^ | & !
+= += -= *= /= %= ^= |= &=
+if else match while loop
+goto ret continue break
+void int uint float bool
+i8 i16 i32 i64
+u8 u16 u32 u64
+f32 f64
+struct
+extern
+_ . ; : '
+
+( ) { } [ ]
+*/ ''/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

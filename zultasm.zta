@@ -1,0 +1,183 @@
+FUNCTION    test
+ARG_I32
+ARG_I32
+RET_I32
+ADD_I32     r2 r0 r1
+RET1        r2
+END_FUNCTION
+END_PROGRAM
+
+
+
+
+
+
+
+/' to figure out'//'
+ALLOC       ptr num
+FREE        ptr
+LOAD_I32    ptr reg
+STORE_I32   ptr reg
+'/
+
+/' done '/
+ASSIGN      reg val
+ADD         reg reg reg
+MOD         reg reg reg
+CMP_EQ      reg reg reg
+JMP0        reg lbl
+JMP         lbl
+LABEL       lbl
+SCOPE_START
+SCOPE_END
+ARG_I32
+RET_I32
+FUNCTION    lbl
+EXTERN      lbl
+END_FUNCTION
+END_EXTERN
+END_PROGRAM
+
+RET         arg ...
+CALL        lbl arg arg ret ... reg ...
+SYSCALL     arg reg ...
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// old version
+
+
+
+FUNCTION    test 2 1
+ARG_I32
+ARG_I32
+RET_I32
+ADD_I32     r2 r0 r1
+RET1        r2
+END_FUNCTION
+ASSIGN_I32  r6   56
+ASSIGN_I32  r3567 12
+PASS_I32    r6
+PASS_I32    r3567
+CALL1       test r89
+PRINT_I32   r89
+END_PROGRAM
+
+
+
+
+/' to figure out'//'
+ALLOC       ptr num
+FREE        ptr
+LOAD_I32    ptr reg
+STORE_I32   ptr reg
+'/
+
+/' done '/
+ASSIGN_I32  reg num
+ASSIGN_STR  ptr str
+ADD_I32     reg reg reg
+MOD_I32     reg reg reg
+CMP_EQ_I32  reg reg reg
+JMP0        reg lbl
+JMP         lbl
+LABEL       lbl
+SYSCALL     num
+SYSCALL1    num reg
+SYSCALL2    num reg reg
+SYSCALL3    num reg reg reg
+SYSCALL4    num reg reg reg reg
+SYSCALL5    num reg reg reg reg reg
+SYSCALL6    num reg reg reg reg reg reg
+SCOPE_START
+SCOPE_END
+ARG_I32
+RET_I32
+PASS_I32    reg
+CALL        lbl
+CALL1       lbl reg
+CALL2       lbl reg reg
+CALL3       lbl reg reg reg
+RET
+RET1        reg
+RET2        reg reg
+RET3        reg reg reg
+FUNCTION    lbl num num
+EXTERN      lbl num num
+END_FUNCTION
+END_EXTERN
+END_PROGRAM
+
+
+/' Debug '/
+PRINT_I32  reg
+PRINT_STR  ptr
+
+
+
+/'
+str == "this is string"
+reg == r0 r1 r2 r3 ...
+lbl == label
+num == number
+ptr == is just a register
+'/
+/' comment '/
+
+
+
+
+/' Rules
+instructions must have fixed number of arguments(0-255.
+PASS instructions must be immediately followed by a CALL.
+ARG_ must appear immediately after FUNCTION
+number of ARG_ == function arg count
+CALL requires a fresh PASS sequence (unless function takes 0 args)
+'/
+
+

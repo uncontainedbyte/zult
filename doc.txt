@@ -1,0 +1,2063 @@
+
+Name: Zult
+File-types: .zlt
+
+# control flow
+    if
+    else
+    while
+    for
+    loop
+    match
+
+----------------------------------------
+conditions
+----------------------------------------
+
+rules:
+- conditions evaluate numeric zero-ness
+- value 0 is false
+- any non-zero value is true
+- condition expressions do not require bool type
+- condition expressions may use integer-compatible types
+
+examples:
+if(0)       // false
+if(1)       // true
+if(-1)      // true
+if(ptr)     // true if non-zero
+
+----------------------------------------
+else
+----------------------------------------
+
+syntax:
+else(condition){
+    ...
+}
+
+fallback syntax:
+else{
+    ...
+}
+
+rules:
+- else defines an alternative branch
+- else may optionally contain a condition
+- conditional else executes only if all previous branches failed
+- unconditional else acts as fallback branch
+- else chains evaluated top-to-bottom
+- only one branch in chain may execute
+
+supported by:
+- if
+- while
+- match
+- else
+
+evaluation:
+1. previous branch fails
+2. evaluate else condition if present
+3. execute branch if condition succeeds
+4. otherwise continue chain
+
+notes:
+- else(condition) is primary language syntax
+- else-if does not exist as separate syntax
+
+----------------------------------------
+if
+----------------------------------------
+
+syntax:
+if(condition){
+    ...
+}
+
+rules:
+- condition evaluated once
+- branch executes if condition succeeds
+- may be followed by else branches
+- branch scope isolated
+
+evaluation:
+1. evaluate condition
+2. execute branch if non-zero
+3. otherwise continue to else chain
+
+----------------------------------------
+while
+----------------------------------------
+
+syntax:
+while(condition){
+    ...
+}
+
+rules:
+- condition checked before each iteration
+- loop executes while condition succeeds
+- may be followed by else branches
+- else chain executes only if first condition check fails
+
+evaluation:
+1. evaluate condition
+2. if zero:
+    - continue to else chain
+    - terminate loop
+3. execute loop body
+4. repeat from step 1
+
+notes:
+- break skips else chain
+
+----------------------------------------
+match
+----------------------------------------
+
+syntax:
+match(value){
+    (pattern){
+        ...
+    }
+}else{
+    ...
+}
+
+rules:
+- match value evaluated once
+- patterns checked top-to-bottom
+- first matching pattern executes
+- may be followed by else branches
+- only one branch may execute
+- duplicate patterns compile error
+
+supported types:
+- integer types
+- trivial integer-compatible types
+
+unsupported types:
+- float
+- string
+- non-trivial objects
+
+pattern forms:
+
+single:
+(1)
+
+multi:
+(2,3,4)
+
+range:
+(5 ~ 16)
+
+range rules:
+- inclusive lower bound
+- inclusive upper bound
+- range patterns require ordered comparable types
+
+evaluation:
+1. evaluate match value
+2. compare against patterns in order
+3. execute first matching branch
+4. continue to else chain if no pattern matched
+
+notes:
+- only one match branch may execute (no fallthrough)
+- ranges require ordered comparable types
+- complex comparisons should use if/else chains
+
+----------------------------------------
+loop
+----------------------------------------
+
+infinite loop syntax:
+loop{
+    ...
+}
+
+counted loop syntax:
+loop(N){
+    ...
+}
+
+indexed counted loop syntax:
+loop(N: i){
+    ...
+}
+
+foreach loop syntax:
+loop(array: item){
+    ...
+}
+
+indexed foreach loop syntax:
+loop(array: item : i){
+    ...
+}
+
+rules:
+- loop{} executes indefinitely
+- loop(N) executes N iterations
+- N is evaluated as expression
+- N evaluated once before iteration begins
+- loop(N: i) exposes current loop index
+- counted loop index type always integer
+- counted loop index increments by 1 automatically
+- modifying loop index changes current iteration position
+- loop(array: item) iterates sequentially over array elements
+- loop(array: item : i) exposes both element and index
+- foreach index type always integer
+- loop-scoped variables local to loop body
+- iteration source evaluated once before iteration begins
+
+counted loop evaluation:
+1. evaluate N expression
+2. initialize index to 0
+3. execute body
+4. increment index by 1
+5. repeat until index >= N
+
+examples:
+loop(10)
+loop(count)
+loop(get_count())
+loop(base + offset)
+
+foreach evaluation:
+1. evaluate array expression
+2. initialize index to 0
+3. bind current element to item
+4. execute body
+5. increment index by 1
+6. repeat until end reached
+
+index modification behavior:
+- incrementing index skips iterations
+- decrementing index repeats iterations
+- final automatic increment still occurs
+
+examples:
+i += 1    // skip next iteration
+i -= 1    // repeat current iteration
+
+notes:
+- loop does not support else branches
+- special iteration behavior should use for loops
+
+----------------------------------------
+unary negation
+----------------------------------------
+
+syntax:
+-value
+
+rules:
+- unary negation is operation syntax
+- negative literals do not exist
+- negation produces negated value of operand
+
+examples:
+-5
+-(a + b)
+
+----------------------------------------
+addition
+----------------------------------------
+
+syntax:
+a + b
+
+rules:
+- adds right operand to left operand
+- result type derived from operand types
+- operands evaluated before operation
+
+----------------------------------------
+subtraction
+----------------------------------------
+
+syntax:
+a - b
+
+rules:
+- subtracts right operand from left operand
+- result type derived from operand types
+- operands evaluated before operation
+
+----------------------------------------
+multiplication
+----------------------------------------
+
+syntax:
+a * b
+
+rules:
+- multiplies left operand by right operand
+- result type derived from operand types
+- operands evaluated before operation
+
+----------------------------------------
+division
+----------------------------------------
+
+syntax:
+a / b
+
+rules:
+- divides left operand by right operand
+- result type derived from operand types
+- operands evaluated before operation
+
+notes:
+- division by zero invalid
+
+----------------------------------------
+modulo
+----------------------------------------
+
+syntax:
+a % b
+
+rules:
+- produces remainder from division of left operand by right operand
+- operands evaluated before operation
+
+notes:
+- modulo by zero invalid
+
+----------------------------------------
+equality
+----------------------------------------
+
+syntax:
+a == b
+
+rules:
+- compares operand values for equality
+- returns 1 if equal
+- returns 0 if not equal
+
+----------------------------------------
+inequality
+----------------------------------------
+
+syntax:
+a != b
+
+rules:
+- compares operand values for inequality
+- returns 1 if not equal
+- returns 0 if equal
+
+----------------------------------------
+greater than
+----------------------------------------
+
+syntax:
+a > b
+
+rules:
+- compares if left operand greater than right operand
+- returns 1 if true
+- returns 0 if false
+
+----------------------------------------
+less than
+----------------------------------------
+
+syntax:
+a < b
+
+rules:
+- compares if left operand less than right operand
+- returns 1 if true
+- returns 0 if false
+
+----------------------------------------
+greater than or equal
+----------------------------------------
+
+syntax:
+a >= b
+
+rules:
+- compares if left operand greater than or equal to right operand
+- returns 1 if true
+- returns 0 if false
+
+----------------------------------------
+less than or equal
+----------------------------------------
+
+syntax:
+a <= b
+
+rules:
+- compares if left operand less than or equal to right operand
+- returns 1 if true
+- returns 0 if false
+
+----------------------------------------
+logical and
+----------------------------------------
+
+syntax:
+a && b
+
+rules:
+- evaluates left operand first
+- if left operand is zero:
+    - returns 0
+    - right operand not evaluated
+- otherwise evaluate right operand
+- returns 1 if both operands non-zero
+- otherwise returns 0
+
+----------------------------------------
+logical or
+----------------------------------------
+
+syntax:
+a || b
+
+rules:
+- evaluates left operand first
+- if left operand non-zero:
+    - returns 1
+    - right operand not evaluated
+- otherwise evaluate right operand
+- returns 1 if either operand non-zero
+- otherwise returns 0
+
+----------------------------------------
+logical not
+----------------------------------------
+
+syntax:
+!value
+
+rules:
+- evaluates operand truth value
+- returns 1 if operand is zero
+- returns 0 if operand is non-zero
+
+----------------------------------------
+bitwise and
+----------------------------------------
+
+syntax:
+a & b
+
+rules:
+- performs bitwise and operation
+- each output bit set only if corresponding bits set in both operands
+
+----------------------------------------
+bitwise or
+----------------------------------------
+
+syntax:
+a | b
+
+rules:
+- performs bitwise or operation
+- output bit set if corresponding bit set in either operand
+
+----------------------------------------
+bitwise xor
+----------------------------------------
+
+syntax:
+a ^ b
+
+rules:
+- performs bitwise xor operation
+- output bit set if corresponding operand bits differ
+
+----------------------------------------
+bitwise not
+----------------------------------------
+
+syntax:
+~value
+
+rules:
+- inverts all bits in operand
+- set bits become zero
+- zero bits become set
+
+----------------------------------------
+left shift
+----------------------------------------
+
+syntax:
+a << b
+
+rules:
+- shifts bits of left operand left by right operand count
+- vacated bits filled with zero
+
+----------------------------------------
+right shift
+----------------------------------------
+
+syntax:
+a >> b
+
+rules:
+- shifts bits of left operand right by right operand count
+
+----------------------------------------
+assignment
+----------------------------------------
+
+syntax:
+a = b
+
+rules:
+- evaluates right operand
+- stores result in left operand
+- assignment is statement syntax
+- assignment produces no value
+- assignment cannot appear inside expressions
+
+----------------------------------------
+compound assignment
+----------------------------------------
+
+syntax:
+a += b
+a -= b
+a *= b
+a /= b
+a %= b
+a ^= b
+a |= b
+a &= b
+a <<= b
+a >>= b
+
+rules:
+- evaluates operation using current left operand value
+- stores operation result into left operand
+- compound assignment is statement syntax
+- compound assignment produces no value
+
+equivalent forms:
+a += b     =>     a = a + b
+a -= b     =>     a = a - b
+a *= b     =>     a = a * b
+a /= b     =>     a = a / b
+a %= b     =>     a = a % b
+a ^= b     =>     a = a ^ b
+a |= b     =>     a = a | b
+a &= b     =>     a = a & b
+a <<= b    =>     a = a << b
+a >>= b    =>     a = a >> b
+
+----------------------------------------
+named primitive types
+----------------------------------------
+
+types:
+void
+int
+uint
+float
+bool
+
+rules:
+- int is alias of i32
+- uint is alias of u32
+- float is alias of f32
+- bool is alias of i8
+- void is special type
+
+----------------------------------------
+fixed width integer types
+----------------------------------------
+
+signed integer types:
+i8
+i16
+i32
+i64
+
+unsigned integer types:
+u8
+u16
+u32
+u64
+
+rules:
+- signed integer types store signed integer values
+- unsigned integer types store unsigned integer values
+- type number represents bit width
+
+----------------------------------------
+floating point types
+----------------------------------------
+
+types:
+f32
+f64
+
+rules:
+- floating point types store fractional numeric values
+- type number represents bit width
+
+----------------------------------------
+void
+----------------------------------------
+
+rules:
+- void represents absence of type
+- void is special type
+- values cannot have void type
+- variables cannot have void type
+
+
+----------------------------------------
+type modifiers
+----------------------------------------
+
+rules:
+- type modifiers modify type itself
+- modifiers apply to all variables in declaration
+- modifiers part of resulting type
+- modifiers evaluated left-to-right
+
+supported modifiers:
+*
+&
+[N]
+
+examples:
+*int a,b,c;
+
+equivalent meaning:
+pointer to int a
+pointer to int b
+pointer to int c
+
+&float x,y;
+
+equivalent meaning:
+reference to float x
+reference to float y
+
+int[4] values;
+
+equivalent meaning:
+array of 4 int values
+
+----------------------------------------
+pointer types
+----------------------------------------
+
+syntax:
+*type value;
+
+examples:
+*int ptr;
+*int p1,p2,p3;
+
+rules:
+- pointers store memory addresses
+- pointers may contain zero value
+- pointers nullable
+- pointer references object of modified type
+
+examples:
+*int a,b;
+
+equivalent meaning:
+a -> pointer to int
+b -> pointer to int
+
+----------------------------------------
+pointer indexing
+----------------------------------------
+
+syntax:
+pointer[index]
+
+rules:
+- pointers support indexing operations
+- indexing accesses offset memory location
+- pointer indexing behaves as pointer offset dereference
+- pointers remain distinct from arrays
+
+----------------------------------------
+pointer arithmetic
+----------------------------------------
+
+supported operations:
++ -
+[]
+
+rules:
+- pointers support arithmetic operations
+- pointer arithmetic operates using element size
+- pointer arithmetic produces pointer result
+
+----------------------------------------
+reference types
+----------------------------------------
+
+syntax:
+&type value;
+
+examples:
+&int ref = val;
+
+&int r1 = val1, r2 = val2, r3 = val3;
+
+rules:
+- references must reference valid object
+- references cannot be null
+- references directly alias referenced object
+- reference references object of modified type
+
+examples:
+&int a = val1,b = val2;
+
+equivalent meaning:
+a -> reference to int
+b -> reference to int
+
+----------------------------------------
+static arrays
+----------------------------------------
+
+syntax:
+type[N] value;
+
+examples:
+int[4] array;
+int[4] v1,v2,v3;
+
+array initialization syntax:
+type[N] array = {value,value,value};
+
+examples:
+int[4] values = {1,2,3,4};
+
+rules:
+- static array is type modifier
+- modifier applies to all declared variables
+- N defines array element count
+- N must be compile-time constant
+- arrays occupy contiguous memory
+- arrays indexed from 0
+- compiler does not treat arrays as pointers
+- array type includes element count
+
+initialization rules:
+- initializer values assigned sequentially by index
+- initializer count must not exceed array size
+- if initializer count smaller than array size:
+    - final initializer value repeated for remaining elements
+
+examples:
+int[4] a,b;
+
+equivalent meaning:
+a -> array of 4 int values
+b -> array of 4 int values
+
+----------------------------------------
+array indexing
+----------------------------------------
+
+syntax:
+array[index]
+
+rules:
+- indexing accesses array element at index position
+- first element index is 0
+- last element index is len - 1
+
+compile-time bounds checking:
+- compiler validates constant index access
+- invalid constant index access compile error
+
+examples:
+int[4] values;
+
+values[0]    // valid
+values[3]    // valid
+values[4]    // invalid
+
+----------------------------------------
+array length
+----------------------------------------
+
+syntax:
+array.len
+
+rules:
+- static arrays contain built-in len member
+- len represents array element count
+- len replaced at compile time with declared array size
+
+examples:
+int[8] values;
+
+values.len    ->    8
+
+----------------------------------------
+array and pointer distinction
+----------------------------------------
+
+rules:
+- arrays are not pointers
+- arrays do not decay into pointers
+- array types and pointer types are distinct
+- compiler treats arrays and pointers differently
+
+----------------------------------------
+struct declarations
+----------------------------------------
+
+syntax:
+struct name{
+    type value;
+}
+
+example:
+struct vec2{
+    float x;
+    float y;
+}
+
+----------------------------------------
+struct members
+----------------------------------------
+
+rules:
+- structs store named member values
+- member order preserved
+- members stored directly in struct memory
+- member access performed using . operator
+
+examples:
+value.x
+value.y
+
+----------------------------------------
+struct behavior
+----------------------------------------
+
+rules:
+- structs are raw data containers
+- structs do not contain member functions
+- structs do not support private members
+- constructors and destructors not part of struct data
+- constructor and destructor implementations shared between all struct instances
+
+----------------------------------------
+struct constructors
+----------------------------------------
+
+syntax:
+constructor(){}
+constructor(type value,...){}
+
+rules:
+- structs may define multiple constructors
+- constructors may accept parameters
+- constructor called during struct creation
+- constructor initializes struct instance
+- constructor operates on current struct instance
+- constructor executes after default member initialization
+- constructor may overwrite default member values
+
+----------------------------------------
+struct destructors
+----------------------------------------
+
+syntax:
+destructor(){}
+
+rules:
+- structs may define destructor
+- destructor called before struct destruction
+- destructor operates on current struct instance
+- only one destructor allowed per struct
+
+----------------------------------------
+default struct member values
+----------------------------------------
+
+syntax:
+type value = expression;
+
+examples:
+int value = 10;
+
+rules:
+- members may define default values
+- default values applied during construction
+
+----------------------------------------
+struct transfers
+----------------------------------------
+
+syntax:
+transfer(&type other){}
+
+examples:
+transfer(&name other){}
+
+rules:
+- structs may define one transfer function
+- transfer defines struct assignment behavior
+- transfer called during struct assignment
+- transfer operates on source struct instance
+- transfer receives destination instance reference
+- transfer implementation fully controlled by struct author
+- transfer may implement move behavior
+- transfer may implement copy behavior
+- transfer may implement deep copy behavior
+- transfer replaces raw copy behavior completely
+
+assignment evaluation:
+a = b;
+
+equivalent behavior:
+b.transfer(a)
+
+notes:
+- transfer not part of struct data
+- transfer implementation shared between all struct instances
+
+----------------------------------------
+self transfer
+----------------------------------------
+
+rules:
+- transfer may receive same source and destination instance
+- self transfer detection performed by comparing instance addresses
+
+example:
+&self == &other
+
+----------------------------------------
+default transfer behavior
+----------------------------------------
+
+rules:
+- structs without transfer use raw memory copy
+- structs with transfer always use transfer behavior
+- raw copy never occurs when transfer defined
+
+----------------------------------------
+struct copy initialization
+----------------------------------------
+
+syntax:
+type a = b;
+
+rules:
+- destination instance constructed first
+- default constructor executed before transfer
+- transfer executed after construction
+
+evaluation:
+1. create destination instance
+2. execute default constructor
+3. execute transfer
+
+----------------------------------------
+function declarations
+----------------------------------------
+
+syntax:
+func name[returns](parameters){
+    code
+}
+
+examples:
+func test[](){}
+func add[int](int a,int b){
+    ret a + b;
+}
+func values[int,int](){
+    ret 1,2;
+}
+
+----------------------------------------
+function return types
+----------------------------------------
+
+syntax:
+[type,...]
+
+rules:
+- square brackets define return types
+- functions may return zero or more values
+- return type order preserved
+- empty return list defines no-return function
+
+examples:
+[]                 // no returns
+[int]              // single return
+[int,int]          // two returns
+[int,float,bool]   // three returns
+
+----------------------------------------
+function parameters
+----------------------------------------
+
+syntax:
+(type name,...)
+
+rules:
+- function parameters declared inside parentheses
+- parameters evaluated before function execution
+- parameter order preserved
+
+examples:
+(int value)
+(int a,int b,float c)
+
+----------------------------------------
+function returns
+----------------------------------------
+
+syntax:
+ret expression,...;
+
+rules:
+- ret exits current function
+- return values separated by commas
+- returned expression count must match function return count
+- return expressions evaluated left-to-right
+
+examples:
+ret 1;
+ret a,b;
+ret value + 1,other * 2;
+
+----------------------------------------
+function call behavior
+----------------------------------------
+
+rules:
+- functions with zero returns cannot be used in expressions
+- functions with single return behave as expression value
+- functions with multiple returns require structural assignment
+- return count mismatch compile error
+
+----------------------------------------
+single return assignment
+----------------------------------------
+
+examples:
+a = fn();
+int value = fn();
+
+rules:
+- single return functions may be assigned directly
+- single return functions may be used inside expressions
+
+----------------------------------------
+multi return assignment
+----------------------------------------
+
+syntax:
+a,b = func();
+
+rules:
+- assignment target count must match function return count
+- assignment order preserved
+- return values assigned left-to-right
+- multi-return functions cannot be used as expression values
+
+valid:
+a,b = func();
+int a,b = func();
+_,b = func();
+
+invalid:
+a = func();
+a,b,c = func();
+
+----------------------------------------
+return discard
+----------------------------------------
+
+syntax:
+_
+
+rules:
+- underscore discards assigned return value
+- discard does not create variable
+- discard valid only in assignment position
+
+examples:
+_,b = func();
+_,_,c = func();
+
+----------------------------------------
+return forwarding
+----------------------------------------
+
+rules:
+- function identifiers inside ret expand to returned values
+- forwarded return count must match current function return count
+
+examples:
+func fn1[int](){
+    ret 1;
+}
+func fn2[int,int](){
+    ret 1,2;
+}
+func fn3[int,int](){
+    ret fn2;
+}
+
+invalid:
+func fn4[int,int](){
+    ret fn1;
+}
+
+# variable declarations
+
+----------------------------------------
+declaration syntax
+----------------------------------------
+
+syntax:
+type name;
+type name = value;
+type name,value = expression;
+
+examples:
+int value;
+int value = 10;
+int a,b = fn();
+
+----------------------------------------
+declaration assignment
+----------------------------------------
+
+rules:
+- declarations may assign values during creation
+- declaration assignment order preserved
+- multi-return assignment allowed during declaration
+- declaration count must match return count
+
+valid:
+int a,b = fn();
+int a,_ = fn();
+
+invalid:
+int a = fn();
+
+# operation overloading
+
+----------------------------------------
+operation declarations
+----------------------------------------
+
+syntax:
+operation symbol[returns](left)(right){
+    code
+}
+
+examples:
+operation +[vec](vec a)(vec b){
+    ret vec(a.x + b.x,a.y + b.y);
+}
+
+----------------------------------------
+operation return types
+----------------------------------------
+
+rules:
+- operation return syntax identical to function return syntax
+- operations may return zero or more values
+- return count validated identically to functions
+
+----------------------------------------
+operation operands
+----------------------------------------
+
+syntax:
+(left)(right)
+
+rules:
+- first parameter group defines left operand
+- second parameter group defines right operand
+- left operand receives left-side value
+- right operand receives right-side value
+
+example:
+a + b
+
+equivalent operand mapping:
+left  -> a
+right -> b
+
+----------------------------------------
+operation symbols
+----------------------------------------
+
+rules:
+- operation name defines overloaded symbol
+- symbol determines operation usage syntax
+
+examples:
+operation +
+operation -
+operation *
+operation /
+
+----------------------------------------
+primitive operation restrictions
+----------------------------------------
+
+rules:
+- primitive types cannot overload operations
+- built-in primitive behavior always preserved
+
+restricted types:
+bool,int,uint,float,void
+i8,i16,i32,i64
+u8,u16,u32,u64
+f32,f64
+
+invalid:
+operation /[int](int a)(int b){}
+
+----------------------------------------
+operation behavior
+----------------------------------------
+
+rules:
+- overloaded operations selected using operand types
+- operation operands evaluated before overload execution
+- operation result used as expression result
+
+----------------------------------------
+supported operation overloads
+----------------------------------------
+
+overloadable binary operations:
++ - * / % 
+== != < > <= >=
+& | ^ << >>
+[]
+
+rules:
+- only listed operations may be overloaded
+
+----------------------------------------
+non-overloadable operations
+----------------------------------------
+
+invalid operations:
+&& ||
+. ::
+=
++= -= *= /= %=
+&= |= ^= <<= >>=
+
+----------------------------------------
+non-overloadable unary operations
+----------------------------------------
+
+invalid unary operations:
+&
+*
+
+----------------------------------------
+bool operation restrictions
+----------------------------------------
+
+restricted operations:
+== != < > <= >=
+
+rules:
+- bool types only support comparison operations
+- arithmetic operations invalid for bool
+- bitwise operations invalid for bool
+
+----------------------------------------
+operation resolution
+----------------------------------------
+
+rules:
+- overload selected using operand types
+- exact overload match required
+- primitive operations always use built-in behavior
+- overload resolution occurs at compile time
+
+----------------------------------------
+unary operation overloading
+----------------------------------------
+
+syntax:
+operation symbol[returns](operand){
+    code
+}
+
+examples:
+operation -[vec](vec value){
+    ret vec(-value.x,-value.y);
+}
+operation ![vec](vec value){
+    ret vec(!value.x,!value.y);
+}
+
+----------------------------------------
+unary operation rules
+----------------------------------------
+
+rules:
+- unary operations use single operand group
+- operand receives operation value
+- unary operation result used as expression result
+- unary overload selected using operand type
+
+----------------------------------------
+supported unary overloads
+----------------------------------------
+
+overloadable unary operations:
++ - ! ~
+
+rules:
+- unary overload syntax differs from binary overload syntax
+- unary operations do not define right operand
+
+----------------------------------------
+external function declarations
+----------------------------------------
+
+syntax:
+extern func name[returns](parameters);
+
+examples:
+extern func printf[int](*char format);
+extern func exit[](int code);
+
+----------------------------------------
+external function rules
+----------------------------------------
+
+rules:
+- external functions declared without code block
+- external functions implemented outside current compilation unit
+- declaration syntax identical to normal functions
+- external functions may define parameters
+- external functions may define return values
+
+----------------------------------------
+undefined type parameters
+----------------------------------------
+
+syntax:
+<T>
+
+examples:
+func name<T>[](){
+}
+
+struct name<T>{
+    T data;
+}
+
+----------------------------------------
+undefined type rules
+----------------------------------------
+
+rules:
+- undefined types act as type placeholders
+- placeholder types replaced during usage
+- replacement occurs at compile time
+- undefined types may be used in functions
+- undefined types may be used in structs
+- multiple undefined types supported
+
+examples:
+<T>
+<T,U>
+<Key,Value>
+
+----------------------------------------
+default undefined types
+----------------------------------------
+
+syntax:
+<T = type>
+
+examples:
+struct list<T = int>{
+}
+
+----------------------------------------
+generic function usage
+----------------------------------------
+
+syntax:
+name<type>();
+
+examples:
+name<int>();
+name<int,float>();
+
+----------------------------------------
+generic struct usage
+----------------------------------------
+
+syntax:
+type<types> value;
+
+examples:
+list<int> values;
+map<int,float> table;
+
+----------------------------------------
+member function declarations
+----------------------------------------
+
+syntax:
+func type.function[returns](parameters){
+    code
+}
+
+examples:
+func vec.normalize[](){}
+func float.round[int](){}
+
+----------------------------------------
+member function behavior
+----------------------------------------
+
+rules:
+- member functions declared outside structs
+- member functions associated with type
+- member functions callable using . syntax
+- member functions equivalent to normal functions with implicit self reference
+- member functions not stored in struct data
+- member functions shared between all instances
+
+----------------------------------------
+member function calls
+----------------------------------------
+
+syntax:
+value.function()
+
+examples:
+vec.normalize()
+
+rules:
+- member function call converted into normal function call
+- current object passed as self reference
+
+example conversion:
+vec.normalize()
+
+equivalent behavior:
+normalize(&vec)
+
+----------------------------------------
+self
+----------------------------------------
+
+rules:
+- self references current member function object
+- self acts as reference to current instance
+- self available only inside member functions
+
+examples:
+self.x
+self.y
+
+----------------------------------------
+type extension
+----------------------------------------
+
+rules:
+- member functions may be added to existing structs
+- member functions may be added to primitive types
+- original type definition modification not required
+
+examples:
+func int.abs[int](){}
+func float.floor[int](){}
+
+# namespaces
+
+----------------------------------------
+namespace declarations
+----------------------------------------
+
+syntax:
+namespace name{
+    code
+}
+
+examples:
+namespace std{}
+
+----------------------------------------
+namespace access
+----------------------------------------
+
+syntax:
+namespace::value
+
+examples:
+std::print
+math::sin
+
+----------------------------------------
+using imports
+----------------------------------------
+
+syntax:
+using namespace::value;
+
+examples:
+using std::print;
+
+----------------------------------------
+using behavior
+----------------------------------------
+
+rules:
+- imported values accessible without namespace prefix
+- using imports single namespace member
+
+----------------------------------------
+aliases
+----------------------------------------
+
+syntax:
+using namespace::value as alias;
+
+examples:
+using std::print as p;
+
+using std as s;
+
+----------------------------------------
+alias behavior
+----------------------------------------
+
+rules:
+- aliases create alternate accessible name
+- aliases do not modify original name
+- original namespace access remains valid
+
+----------------------------------------
+member function aliases
+----------------------------------------
+
+syntax:
+using namespace::function as type.function;
+
+examples:
+using vec.std::normalize as vec.normalize;
+
+----------------------------------------
+member function alias behavior
+----------------------------------------
+
+rules:
+- normal functions may be aliased as member functions
+- aliases create member-call syntax access
+- original function name remains accessible
+- multiple libraries may define same function name
+- programmer selects preferred member alias
+
+examples:
+vec.normalize()
+
+equivalent behavior:
+vec.std::normalize()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// previous version
+
+Name: Zult
+File-types: .zlt
+
+
+if(condition){
+	
+}else(condition){
+	
+}else{
+	
+}
+
+match(value){
+	(1){
+		// runs if value == 1
+	}
+	(2,3,4){
+		// runs if value == 2 or 3 or 4
+	}
+	(5 ~ 16){
+		// runs if value >= 5 or <= 16
+	}
+}else{
+	// runs if no condition matched
+}
+
+while(condition){
+	
+}else{
+	// runs if condition was false on first check
+}
+
+loop{
+	// loops infinitly
+}
+loop(N){
+	// loops N times
+}
+loop(N: i){
+	// loops N times, with <i> as current index per itoration
+}
+loop(array: item){
+	// loops over all items in <array> with current element being <item>
+}
+loop(array: item : i){
+	// loops over all items in <array> with current element being <item> and index being <i>
+}
+
+for(initialization; condition; updation){
+	// identical to C/C++
+}
+
+func name[type optional_ident,type optional_ident](type val,type val){
+	ret ret_val1,ret_val2;
+}
+
+_ is a function return discard
+func fn1[int ret1](){ ret 1; }
+func fn2[int ret1,int ret2](){ ret 1,2; }
+
+a = fn1(); // fine, a now has 1
+a = fn2(); // compile error, fn2 returns 2 values, expects 1
+a = fn2().ret2; // fine, a now has 2
+a,b = fn1(); // compile error, fn1 returns 1 value, expects 2
+a,b = fn2(); // fine, a has 1, b has 2
+a,b = fn2().ret1; // compile error, ret1 is only 1 value, expects 2
+_,b = fn2(); // ignores first return, b is now 2
+
+func fn3[int,int](){ ret fn2; } // would return 1 and 2
+func fn4[int,int](){ ret fn1; } // compile error, ret expects 2 values, only 1 provided
+
+type name; // declares name variable
+type name = val; // declares name variable and assigns val
+type name = val,name2 = val2; // declares name variable and assigns val, also declares name2 and assings it val2
+type a,b = fn2(); // declares a and b, assigns return 1 to a and return 2 to b
+type a = fn2(); // compile error, fn2 returns 2 values, but only 1 declaration
+type a,_ = fn2(); // declares 1, assings return 1 to a, ignores second return
+
+op +[vec](vec a)(vec b){
+	ret vec(a.x+b.x,a.y+b.y);
+}
+op /[int,int](int a)(int b){
+	ret a/b, a%b;
+}
+
+struct name{ // C-style with support for destructor and constructor
+	type val1;
+	type val2 = value;
+	constructor(){}
+	constructor(type val){
+		val1 = val;
+		// structs constructor
+	}
+	destroy(){
+		// structs desctructor
+	}
+}
+
+type arr[count];
+type arr[count] = {value,value,value,...};
+arr[N] = value;
+a = arr[N];
+arr.len;// only for fixed size arrays
+
+alloc<type,amount>(constructorInput)
+alloc<type>(constructorInput) // non array type alloc
+type* ptr = alloc<type,amount>(constructorInput);
+free(ptr);
+ptr = &a;
+a = *ptr;
+vec2* p = alloc<vec2>();
+p->x = a;
+int& ref; // error
+int& ref = p->x;
+
+extern func name[type](arg,arg);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// previous version
+
+Name: Zult
+File-types: .zlt
+
+
+enum DataType{
+	Int=-1, // value is an int type
+	Null=0,
+	Int=1,  // variable/const is an int type
+}
+struct instruction{
+	uint ID; // instruction ID
+	uint SID // sub instruction ID
+	
+	int type1;
+	std::string value1;
+	int type2;
+	std::string value2;
+	int type3;
+	std::string value3;
+};
+
+
+
+declare const type value
+
+
+
+
+exit val/const/var
+
+
+
+
+
+/'
+const int con1 = 2321
+const con2 = 2321
+
+int name1
+int name2 = 0
+
+fn int func1(int arg1, int arg2){ ret arg1 + arg2 }
+fn int func2(arg1,arg2){ ret arg1 + arg2 }
+fn func3(int arg1, int arg2){ ret arg1 + arg2 }
+fn func4(arg1,arg2){ ret arg1 + arg2 }
+
+struct stuk1{
+	int name1,name2,name3
+	int name4
+	stuk1(name1,name2)
+}
+
+fn main(){
+	func1(0,0)
+	int var = name2
+	int var2 = 657108+2345
+	var += var2 //var = var + var2
+	var = var*2+var2
+	ret var+func1(var,var2)
+}
+
+'/
+
+
+
+/'
+
+fn add(A,B){
+	ret A+B
+}
+
+fn main(){//making the main function, pretty standard C
+	
+	int var
+	var = 0
+	
+	
+	ret var;// program exists with code var
+}
+
+'/
+
+
+
+
+
+
+
+
+
+
+Lexer Documentation:
+	--TokenTypes(enum class):
+		ERROR:    Unrecognized tokens.
+		Ident:    Identifiers (variables, functions).
+		Const:    Numeric constants (integers, floats).
+		Type:     Built-in data types (`int`, `float`).
+		Symbol:   Punctuation (`{`, `(`, `,`).
+		Keyword:  Reserved words (`ret`, `if`, `while`).
+		Operator: Arithmetic, comparison, assignment (`+`, `==`, `=`).
+		String:   String literals (`"Hello"`, `'C'`).
+		Nothing:  Placeholder.
+	
+	Token(struct) Represents a single lexed unit:
+		type:   The token's category.
+		value:  The token's text content.
+		line:   Starting line number.
+		column: Starting column number.
+	
+	Tokens(Map)
+		A constant lookup table (`std::unordered_map<std::string,TokenType>`) mapping strings like keywords, operators, and symbols to their `TokenType`.
+	
+	StringTokens(Map)
+		A map (`std::unordered_map<std::string,int>`) defining delimiters for string literals (e.g., `"`, `'`).
+	
+	Comment-Definitions(`CommentType` struct & `CommentTypes` vector):
+		CommentType:  Defines comment patterns with `start`, `end` (empty for single-line), and `isMultiline` flag.
+		CommentTypes: A `std::vector` holding `CommentType` objects to support different comment syntaxes (e.g., `/' ... '/`, `//`).
+	
+	Utility Functions:
+		std::string TokenTypeToString(TokenType type): Converts a `TokenType` enum to its string name.
+		std::vector<std::string> SortTokensByLength(...): Sorts token strings by length (descending) to ensure longest-match precedence during lexing.
+		bool safe_stoi(...): Robustly converts a string to an integer, handling different bases (binary, hex) and error conditions.
+	
+	class Lexer: performs tokenization:
+		Public Method<std::vector<Token> lex(std::string& str)> The primary function to tokenize an input string.
+			Takes the source code `str` as input.
+			Splits the input into lines, storing them for context.
+			Iterates through the input, skipping whitespace and newlines.
+			Dispatches to specialized private methods (`lexIdent`, `lexNumber`, `lexComment`, `lexString`) or directly matches predefined tokens (operators, keywords, etc.) using the length-sorted list.
+			Generates an `ERROR` token for unmatched characters.
+			Returns a `std::vector` of `Token` objects.
+		
+		Private Helper Methods:
+			char inc():   Reads the current character and then advances the internal string index.
+			PeekRet peek(int offset = 0) const:   Safely reads a character at an `offset` from the current position without advancing. Returns a struct indicating if a character exists and its value.
+			Token lexIdent(uint& ln, uint& cn):   Extracts identifiers or recognizes them as keywords if they match entries in the `Tokens` map.
+			Token lexNumber(uint& ln, uint& cn):  Parses numeric constants, handling decimal, binary (e.g., `10b1010`), hexadecimal (e.g., `0xAF`), and floating-point numbers.
+			bool lexComment(uint& ln, uint& cn):  Detects and consumes single-line and multi-line comments based on `CommentTypes`. Returns `true` if a comment was consumed.
+			bool lexString(uint& ln, uint& cn, std::vector<Token>& tokens):   Detects and extracts string literals enclosed by delimiters defined in `StringTokens`. Returns `true` if a string was consumed.
+
+
+
+Parser Documentation:
+	--NodeType(enum class) Defines the types of nodes in the AST:
+		Type:   A data type.
+		Ident:  An identifier.
+		Number: A numeric literal.
+		Const:  A constant declaration.
+		Func:   A function.
+		Var:    A variable declaration.
+		Ret:    A return statement.
+		Prog:   The root of the program's AST.
+		ERROR:  A parsing error.
+		UnaryOp:A unary operator expression.
+		BinOp:  A binary operator expression.
+		Expr:   A general expression.
+	
+	Node(struct) Represents a single node in the Abstract Syntax Tree:
+		type:   The node's type (`NodeType`).
+		value:   The node's value (e.g., identifier name, literal value, operator symbol).
+		token:   The source token from which this node was primarily derived.
+		children:   A list of pointers to child nodes.
+		errorData:   A list of strings for error messages specific to this node.
+		Constructor:   Initializes a `Node` with its type, optional value, and associated token.
+		Destructor:   Deallocates memory for all child nodes.
+		void addError(const std::string& message):   Adds an error message to `errorData`.
+	
+	RULE(enum class) Defines specific patterns of tokens that the parser looks for:
+		ConstTypeIdentEQ: Matches "const Type Identifier =".
+		IdentOpenCurl:    Matches "Identifier (".
+	
+	Element(struct) A helper for `RULE` definitions, specifying a token type or value to match:
+		Type:   The `TokenType` to match (or `TokenType::Nothing` to check `Value`).
+		Value:  The specific string content to match.
+	
+	Rules(std::unordered_map<RULE, std::vector<Element>>):
+		A constant lookup table mapping `RULE` enums to their detailed token sequences.
+	
+	PrecedenceInfo(struct) Defines properties for an operator's precedence and associativity:
+		unaryPrecedence:   Precedence when used as a unary prefix operator.
+		binaryPrecedence:  Precedence when used as a binary infix operator.
+		isLeftAssociative: True if the operator is left-associative.
+		Static Helpers:    `Unary`, `Binary`, `Both` (for convenient creation).
+	
+	Precedence(static const std::unordered_map<std::string, PrecedenceInfo>):
+		A constant lookup table mapping operator strings (e.g., "+", "==") to their `PrecedenceInfo`.
+	
+	std::string NodeTypeToString(NodeType type):
+		Converts a `NodeType` enum to its string name.
+	
+	class Parser: parses tokens to build an AST:
+		Public Method:
+			Node* parse(std::vector<Token> _tokens): The primary function to parse an input token stream.
+				Takes a `std::vector` of `Token` objects as input.
+				Returns the root `Node` of the generated AST.
+			
+		Private Helper Methods**
+			Node* Start():    Initiates the parsing of the entire program.
+			Node* Variable(): Parses a variable declaration.
+			Node* Function(): Parses a function declaration or definition.
+			Node* Block():    Parses a block of statements (e.g., `{ ... }`).
+			Node* Arg():      Parses a function argument definition.
+			Node* Return():   Parses a return statement.
+			Node* Call():     Parses a function call.
+			Node* Const():    Parses a constant declaration.
+			Node* Struct():   Parses a struct definition.
+			Node* Assign():   Parses an assignment statement.
+			
+			void pusherror(Node* node, Node* err, std::vector<std::string> errors):   Adds an `ERROR` node as a child, including specific error messages.
+			void pushnext(Node* node, NodeType type):   Consumes the next token, creates a new node of the given type, and adds it as a child to `node`.
+			void push(Node* node, Node* newnode):   Adds an existing `newnode` as a child to `node`.
+			int fullcheck(std::vector<RULE> IDs):   Checks a list of `RULE`s in order and returns the 1-based index of the first match, without consuming tokens.
+			PeekRet peek(int offset = 0) const:   Safely reads a token at an `offset` from the current position without advancing.
+			Node* Expression(int minPrec):   Parses an expression based on operator precedence.
+			TokenType Type(Token):   Returns the `TokenType` of a given `Token`.
+			Node* ParsePrimary():   Parses basic expression components (literals, identifiers, parenthesized expressions).
+			Node* ParseUnary():   Parses a unary expression or a primary expression.
+			int check(RULE ID):   Checks if the current token sequence matches a `RULE` without consuming tokens.
+			Token inc():   Consumes the current token and advances the parser's position.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
