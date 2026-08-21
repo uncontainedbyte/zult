@@ -1,28 +1,23 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <optional>
-#include <unordered_map>
-#include <sstream>
-#include <stdarg.h>
-#include <algorithm>
+#include "symbol-table.hpp"
 #include <iostream>
-#include "token.hpp"
 
-std::string TokenTypeToString(TokenType type);
 
 class Lexer{
 	public:
-		Lexer();
-		
-		std::vector<Token> lex(std::string& str);
-		
-		std::vector<std::string> lines;
+		void lex();
 	private:
+		std::string line_buffer;
+		std::string buffer = "";
+		int index = 0;
+		int column = 1;
+		int row = 1;
 		
-		std::string m_str;
-		size_t m_index = 0;
+		char specialChar(char);
+		void convertSpecialNums();
+		void refineIdent(int);
+		void refineSymbols(int);
 		
 		struct PeekRet{
 			bool h;
@@ -31,11 +26,5 @@ class Lexer{
 		
 		PeekRet peek(int offset = 0) const;
 		char inc();
-		Token lexIdent(uint&,uint&);
-		Token lexNumber(uint&,uint&);
-		bool lexComment(uint&,uint&);
-		bool lexString(uint&,uint&,std::vector<Token>& tokens);
-		void lexSymbol(uint&,uint&,std::vector<Token>& tokens);
 };
-
 inline Lexer lexer;

@@ -1,220 +1,234 @@
 #include "lexer.h"
 
-std::string TokenTypeToString(TokenType type){
-	switch(type){
-		case TokenType::Ident: return "Ident";
-		case TokenType::Symbol: return "Symbol";
-		case TokenType::String: return "String";
-		case TokenType::Number: return "Number";
-		case TokenType::Eof: return "EOF";
-	};
-	return "NULL_TYPE(How?\?\?)";
-}
-void printLineError(std::string line, uint row, uint colum){
-	std::cout<<row<<" "<<line<<std::endl;
-	std::cout<<" "<<std::string(std::to_string(row).size(),' ')<<std::string(colum-1,' ')<<"^"<<std::endl;
-}
 
-std::vector<Token> Lexer::lex(std::string& str) {
-	m_str = std::move(str);
-	std::istringstream iss(m_str);
-	std::string line;
-	lines.push_back("this should not be seen");
-	while(std::getline(iss, line)){
-		lines.push_back(line);
-	}
-	uint lineNumber = 1;
-	uint columnNumber = 1;
-	std::vector<Token> tokens;
+
+void Lexer::lex(){
+	file_lines.push_back("this should not be seen");
+	line_buffer = "";
+	index = 0;
+	column = 1;
+	row = 1;
+	buffer = "";
+	
+	int Lcolumn; // local column
 	while(peek().h){
-		begin:
-		if(peek().v == '\n'){
-			inc();
-			lineNumber++;
-			columnNumber=1;
+		Lcolumn = column;
+		if(peek().v=='\n'){
+			row++; column=1; inc();
+			line_buffer.pop_back();
+			file_lines.push_back(line_buffer);
+			line_buffer.clear();
 			continue;
-		}
+		}else
 		if(std::isspace(peek().v)){
-			inc();
-			columnNumber++;
-			continue;
-		}
-		
+			column++; inc(); continue;
+		}else
 		if(std::isalpha(peek().v)||peek().v=='_'){
-			tokens.push_back(lexIdent(lineNumber,columnNumber));
+			column++;
+			buffer.push_back(inc());
+			while(peek().h && (std::isalnum(peek().v) || peek().v == '_')){
+				column++;
+				buffer.push_back(inc());
+			}
+			refineIdent(Lcolumn);
 			continue;
-		}
-		
+		}else
 		if(std::isdigit(peek().v)){
-			tokens.push_back(lexNumber(lineNumber,columnNumber));
-			continue;
-		}
-		
-		if(lexComment(lineNumber,columnNumber)){
-			continue;
-		}
-		
-		if(lexString(lineNumber,columnNumber,tokens)){
-			continue;
-		}
-		
-		lexSymbol(lineNumber,columnNumber,tokens);
-		
-	}
-	m_index = 0;
-	tokens.push_back({ TokenType::Eof, "EOF", lineNumber, columnNumber });
-	return tokens;
-}
-
-
-Token Lexer::lexIdent(uint& ln,uint& cn) {
-	std::string buf;
-	uint tmp=cn;
-	buf.push_back(inc());
-	cn++;
-	while(peek().h && (std::isalnum(peek().v) || peek().v == '_')){
-		buf.push_back(inc());
-		cn++;
-	}
-	return { TokenType::Ident, buf, ln, tmp };
-}
-Token Lexer::lexNumber(uint& ln, uint& cn) {
-	std::string buf;
-	uint tmp=cn;
-	buf.push_back(inc());
-	cn++;
-	while(peek().h && std::isdigit(peek().v)){
-		buf.push_back(inc());
-		cn++;
-	}
-	if(peek().h && (peek().v == 'b' || peek().v == 'x' || peek().v == '.')){
-		buf.push_back(inc());
-		cn++;
-		while(peek().h && std::isdigit(peek().v)){
-			buf.push_back(inc());
-			cn++;
-		}
-	}
-	return { TokenType::Number, buf, ln, tmp };
-}
-bool Lexer::lexComment(uint& ln,uint& cn) {
-	uint tmp = cn;
-	uint tmp1 = ln;
-	if(peek().h && peek().v == '/' && peek(1).h && peek(1).v == '/'){
-		inc();
-		inc();
-		cn+=2;
-		while(peek().h && peek().v != '\n'){
-			inc();
-			cn++;
-		}
-		inc();
-		ln++;
-		cn = 1;
-		return true;
-	}
-	if(peek().h && peek().v == '/' && peek(1).h && peek(1).v == '\''){
-		inc();
-		inc();
-		cn+=2;
-		while(1){
-			if(!peek().h || !peek(1).h){
-				std::cout<<"ERROR: No End To Comment"<<std::endl;
-				printLineError(lines[tmp1],tmp1,tmp);
-				break;
+			column++;
+			buffer.push_back(inc());
+			while(peek().h && std::isdigit(peek().v)){
+				column++;
+				buffer.push_back(inc());
+			}
+			if(peek().h && (peek().v=='x' || peek().v=='b' || peek().v=='X' || peek().v=='B' || peek().v=='.')){
+				convertSpecialNums();
 			}
 			
-			if(peek().v == '\'' && peek(1).v == '/'){
-				inc();
-				inc();
-				cn+=2;
-				return true;
-			}
-			if(peek().v == '\n'){ inc(); ln++; cn=1; continue; }
-			
-			inc();
-			cn++;
-		}
-	}
-	return false;
-}
-bool Lexer::lexString(uint& ln,uint& cn,std::vector<Token>& tokens){
-	uint tmpcn = cn;
-	uint tmpln = ln;
-	if(!peek().h){ return false; }
-	if(peek().v != '\"'){ return false; }
-	
-	inc();
-	cn++;
-	
-	std::string buf;
-	while(1){
-		if(!peek().h){
-			std::cout<<"ERROR: No End To String"<<std::endl;
-			printLineError(lines[tmpln],tmpln,tmpcn);
-			break;
-		}
+			tokens.push_back({TokenID::Number,buffer,row,Lcolumn,column-Lcolumn});
+			buffer.clear();
+			continue;
+		}else
 		if(peek().v == '\"'){
+			column++;
 			inc();
-			cn++;
-			tokens.push_back({ TokenType::String, buf, tmpln, tmpcn });
-			return true;
-		}
-		if('\\' == peek().v){ inc(); cn++;
-			if('n' == peek().v){
-				buf.push_back('\n');
-				inc(); cn++;
-			}else if('\"' == peek().v){
-				buf.push_back('\"');
-				inc(); cn++;
-			}else{
-				buf.push_back('\\');
+			while(peek().h && peek().v!='\"'){
+				if(peek().v=='\\'){
+					column++;
+					inc();
+					if(!peek().h) break;
+					column++;
+					buffer.push_back(specialChar(inc()));
+				}else{
+					column++;
+					buffer.push_back(inc());
+				}
 			}
+			if(!peek().h){
+				
+				// error, no closing quotes
+				
+			}
+			column++;
+			inc();
+			
+			tokens.push_back({TokenID::String,buffer,row,Lcolumn,column-Lcolumn});
+			buffer.clear();
+			continue;
+		}else
+		if(peek().v=='/'&&(peek(1).h&&peek(1).v=='\'')){
+			inc();inc();
+			column++;column++;
+			
+			while(peek().h&&peek(1).h&&!(peek().v=='\''&&peek(1).v=='/')){
+				if(peek().v=='\n'){
+					row++; column=1; inc();
+					line_buffer.pop_back();
+					file_lines.push_back(line_buffer);
+					line_buffer.clear();
+				}else{
+					column++; inc();
+				}
+			}
+			if(!peek().h||!peek(1).h){
+				
+				// error, unclosed comment
+				
+			}
+			inc();inc();
+			continue;
+		}else
+		if(isSymbol(peek().v)){
+			column++;
+			buffer.push_back(inc());
+			while(peek().h && isSymbol(peek().v)){
+				if(peek().v=='/'&&(peek(1).h&&peek(1).v=='\'')) break;
+				if(peek().v=='\"') break;
+				column++;
+				buffer.push_back(inc());
+			}
+			
+			refineSymbols(Lcolumn);
 			continue;
 		}
-		if(peek().v == '\n'){ inc(); ln++; cn=1; continue; }
-		buf.push_back(inc());
-		cn++;
+		
+		tokens.push_back({TokenID::Unknown,std::string(1,peek().v),row,column,1});
+		column++;
+		inc();
 	}
 	
+	tokens.push_back({TokenID::eof,"",row,column,0});
+}
+
+
+char Lexer::specialChar(char c){
+	switch(c){
+		case 'n': return '\n';
+		case 'r': return '\r';
+		case 't': return '\t';
+		case 'v': return '\v';
+		case 'b': return '\b';
+		case 'f': return '\f';
+		case 'a': return '\a';
+		case '0': return '\0';
+		case '\'': return '\'';
+		case '\"': return '\"';
+		case '\\': return '\\';
+		default: return c;
+	};
+}
+bool isHex(char c){
+	const char hex[16] = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};
+	const char HEX[16] = {'0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'};
+	for(int s=0;s<16;s++){
+		if(hex[s]==c){ return true; }
+		if(HEX[s]==c){ return true; }
+	}
 	return false;
 }
-void Lexer::lexSymbol(uint& ln,uint& cn,std::vector<Token>& tokens){
-	uint tmp = cn;
-	std::string buf;
-	while(peek().h){
-		if(peek().v == '\n'){
-			break;
-		}
-		if(std::isspace(peek().v)){
-			break;
-		}
-		if(std::isalpha(peek().v)||peek().v=='_') break;
-		if(std::isdigit(peek().v)) break;
-		if(peek().v=='\"') break;
-		if(peek().v=='/'&&peek(1).h&&peek(1).v=='/'){
-			break;
-		}
-		if(peek().v=='/'&&peek(1).h&&peek(1).v=='\''){
-			break;
-		}
-		
-		buf.push_back(inc());
-		cn++;
+void Lexer::convertSpecialNums(){
+	std::string part1 = buffer;
+	std::string part2 = "";
+	if(!isHex(peek(1).v)){
+		return;
 	}
-	if(buf.size()<1) return;
-	tokens.push_back({ TokenType::Symbol, buf, ln, tmp });
+	column++;
+	char type = inc();
+	while(peek().h && isHex(peek().v)){
+		column++;
+		part2.push_back(inc());
+	}
+	if(type == 'x'||type == 'X'){
+		buffer = std::to_string(std::stoull(part2, nullptr, 16));
+	}else
+	if(type == 'b'||type == 'B'){
+		buffer = std::to_string(std::stoull(part2, nullptr, 2));
+	}else{
+		buffer = part1+'.'+part2;
+	}
 }
+void Lexer::refineIdent(int Lcolumn){
+	if(Lexer_Table.count(buffer)){
+		TokenID id = Lexer_Table.at(buffer);
+		tokens.push_back({id,"",row,Lcolumn,column-Lcolumn});
+		buffer.clear();
+	}else{
+		tokens.push_back({TokenID::Ident,buffer,row,Lcolumn,column-Lcolumn});
+		buffer.clear();
+	}
+}
+void Lexer::refineSymbols(int Lcolumn){
+	if(Lexer_Table.count(buffer)){
+		TokenID id = Lexer_Table.at(buffer);
+		tokens.push_back({id,"",row,Lcolumn,column-Lcolumn});
+		buffer.clear();
+	}else{
+		std::string tmp;
+		bool g = false;
+		while(!buffer.empty()){
+			for(int s=0;s<buffer.size();s++){
+				tmp = buffer.substr(0,buffer.size()-s);
+				if(Lexer_Table.count(tmp)){
+					TokenID id = Lexer_Table.at(tmp);
+					tokens.push_back({id,"",row,Lcolumn,(column-s)-Lcolumn});
+					if(s==0){
+						buffer.clear();
+					}else{
+						buffer = buffer.substr(buffer.size()-s);
+						Lcolumn+=buffer.size()-s;
+					}
+					g = true;
+				}
+			}
+			if(!g){
+				if(buffer.size()>1){
+					tokens.push_back({TokenID::Unknown,buffer.substr(0,1),row,Lcolumn,(column-((int)buffer.size()-1))-Lcolumn});
+					buffer = buffer.substr(1);
+					Lcolumn+=1;
+				}else{
+					tokens.push_back({TokenID::Unknown,buffer,row,Lcolumn,column-Lcolumn});
+					buffer.clear();
+				}
+			}
+			g = false;
+		}
+	}
+}
+
+
+
+
+
 
 
 
 Lexer::PeekRet Lexer::peek(int offset) const{
-	if(m_index + offset >= m_str.size()){
+	if(index + offset >= raw_file.size()){
 		return {0,'\0'};
 	}
-	return {1,m_str[m_index + offset]};
+	return {1,raw_file[index + offset]};
 }
 char Lexer::inc(){
-	return m_str.at(m_index++);
+	char c = raw_file.at(index++);
+	line_buffer.push_back(c);
+	return c;
 }
-Lexer::Lexer(){}

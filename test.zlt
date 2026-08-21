@@ -1,42 +1,13 @@
 
-func calc[int](int oper,int a,int b){
-	if(oper==0){
-		ret a+b;
-	}else(oper==1){
-		ret a-b;
-	}else(oper==2){
-		ret a*b;
-	}else(oper==3){
-		ret a/b;
-	}
+
+struct name{
+	int value;
+	bool val2 = 1;
 }
 
 func main[int](){
-	int running = 1;
-	int clock = 0;
-	int pc=0;
-	while(running){
-		sleep(250);
-		//tuti(clock);
-		//tut("\n");
-		pc+=1;
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		if(clock==0){
-			clock=1;
-		}else{
-			clock=0;
-		}
-	}
-	ret 0;
+	name v;
+	v.value = 2;
 }
 
 
@@ -56,9 +27,8 @@ func main[int](){
 
 
 
-
-
-/'' /*
+/''
+/*
 func main[int](){
 	int op = 0;
 	int a = 3;
