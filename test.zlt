@@ -1,14 +1,7 @@
 
+int var;
 
-struct name{
-	int value;
-	bool val2 = 1;
-}
 
-func main[int](){
-	name v;
-	v.value = 2;
-}
 
 
 
