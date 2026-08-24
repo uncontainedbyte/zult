@@ -159,7 +159,6 @@ floating point types: f32,f64,float,double.
 Modifiers:
 
 * pointer
-& reference
 [N] array(of N values)
 const immutable
 modifiers are parsed left to right
@@ -168,10 +167,8 @@ type modifiers modify the type itself
 examples:
 
      *int: pointer to int.
-    &*int: reference to pointer to int.
    [5]int: array of 5 ints.
 [3][5]int: 3 arrays of 5 ints.
-  &[5]int: reference to array of 5 ints.
   [5]*int: array of 5 pointers to ints.
 
 
@@ -307,7 +304,9 @@ Operations & Overloading
 operators order by procedence:
 
 []        (left)
-. *       (unary,left)
+. ::      (left)
+*         (unary,right)
+$         (unary,right)
 ! ~ + -   (unary,right)
 * % /     (left)
 + -       (left)

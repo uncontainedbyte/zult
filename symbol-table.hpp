@@ -26,17 +26,19 @@ enum class TokenID{
 	LSHIFTASSIGN, RSHIFTASSIGN, LSHIFT, RSHIFT,
 	ADDASSIGN, SUBASSIGN, MULASSIGN, DIVASSIGN, MODASSIGN, ANDASSIGN, ORASSIGN, XORASSIGN, 
 	LESSEQUAL, GREATEREQUAL, EQUAL, NOTEQUAL, OR, AND, SPECIALASSIGN, ACCESSOR, UNDERSCORE,
-	ASSIGN, BILL, COMMA, DOT, STAR, EXCLAMATION, TILDA, PLUS, MINUS, PERCENT, RSLASH,
+	ASSIGN, BILL, COMMA, DOT, STAR, EXCLAMATION, TILDE, PLUS, MINUS, PERCENT, SLASH,
 	OPENSQUAREBRACKET, CLOSEDSQUAREBRACKET, OPENBRACKET, CLOSEDBRACKET,
-	CURLYOPENBRACKET, CURLYCLOSEDBRACKET,
+	CURLYOPENBRACKET, CURLYCLOSEDBRACKET, COLON,
 	BITAND, BITXOR, BITOR, LESS, GREATER, SEMI,
 };
 enum class SyntaxID{
 	Start,
-	
-	
+	Expr, Number, Ident, UnaryOp, Dereference, BoolNot, BitwiseNot, Positive, Negitive, Literal, String,
+	GreaterEqual,LessEqual,Accessor,NotEqual,Multiply,Add,Subtract,Modulos,Divide,LeftShift,RightShift,
+	Equal,BoolOr,BoolAnd,PointerMath,BitNot,BitAnd,BitOr,BitXor,Less,Greater,MemberAccess
 };
 #define CASE_TOKEN(NAME) case TokenID::NAME: return #NAME;
+#define CASE_SYNTAX(NAME) case SyntaxID::NAME: return #NAME;
 inline std::string TokenToString(TokenID id){
 	switch(id){
 		CASE_TOKEN( Unknown )
@@ -78,7 +80,7 @@ inline std::string TokenToString(TokenID id){
 		CASE_TOKEN( STRUCT )
 		CASE_TOKEN( LSHIFT )
 		CASE_TOKEN( RSHIFT )
-		CASE_TOKEN( RSLASH )
+		CASE_TOKEN( SLASH )
 		CASE_TOKEN( ASSIGN )
 		CASE_TOKEN( BITAND )
 		CASE_TOKEN( BITXOR )
@@ -89,9 +91,10 @@ inline std::string TokenToString(TokenID id){
 		CASE_TOKEN( CONST )
 		CASE_TOKEN( EQUAL )
 		CASE_TOKEN( COMMA )
-		CASE_TOKEN( TILDA )
+		CASE_TOKEN( TILDE )
 		CASE_TOKEN( MINUS )
 		CASE_TOKEN( BITOR )
+		CASE_TOKEN( COLON )
 		CASE_TOKEN( ELSE )
 		CASE_TOKEN( SELF )
 		CASE_TOKEN( ENUM )
@@ -121,6 +124,44 @@ inline std::string TokenToString(TokenID id){
 		CASE_TOKEN( I8 )
 		CASE_TOKEN( U8 )
 		CASE_TOKEN( OR )
+	};
+	return "Unhandled TokenToString Case";
+}
+inline std::string SyntaxToString(SyntaxID id){
+	switch(id){
+		CASE_SYNTAX( Start )
+		CASE_SYNTAX( Number )
+		CASE_SYNTAX( Ident )
+		CASE_SYNTAX( UnaryOp )
+		CASE_SYNTAX( Dereference )
+		CASE_SYNTAX( BoolNot )
+		CASE_SYNTAX( BitwiseNot )
+		CASE_SYNTAX( Positive )
+		CASE_SYNTAX( Negitive )
+		CASE_SYNTAX( Literal )
+		CASE_SYNTAX( String )
+		CASE_SYNTAX( GreaterEqual )
+		CASE_SYNTAX( LessEqual )
+		CASE_SYNTAX( Accessor )
+		CASE_SYNTAX( NotEqual )
+		CASE_SYNTAX( Multiply )
+		CASE_SYNTAX( Add )
+		CASE_SYNTAX( Subtract )
+		CASE_SYNTAX( Modulos )
+		CASE_SYNTAX( Divide )
+		CASE_SYNTAX( LeftShift )
+		CASE_SYNTAX( RightShift )
+		CASE_SYNTAX( Equal )
+		CASE_SYNTAX( BoolOr )
+		CASE_SYNTAX( BoolAnd )
+		CASE_SYNTAX( PointerMath )
+		CASE_SYNTAX( BitNot )
+		CASE_SYNTAX( BitAnd )
+		CASE_SYNTAX( BitOr )
+		CASE_SYNTAX( BitXor )
+		CASE_SYNTAX( Less )
+		CASE_SYNTAX( Greater )
+		CASE_SYNTAX( MemberAccess )
 	};
 	return "Unhandled TokenToString Case";
 }
@@ -185,11 +226,11 @@ inline const std::unordered_map<std::string,TokenID> Lexer_Table = {
 	{".",TokenID::DOT},
 	{"*",TokenID::STAR},
 	{"!",TokenID::EXCLAMATION},
-	{"~",TokenID::TILDA},
+	{"~",TokenID::TILDE},
 	{"+",TokenID::PLUS},
 	{"-",TokenID::MINUS},
 	{"%",TokenID::PERCENT},
-	{"/",TokenID::RSLASH},
+	{"/",TokenID::SLASH},
 	{"&",TokenID::BITAND},
 	{"^",TokenID::BITXOR},
 	{"|",TokenID::BITOR},
@@ -202,14 +243,58 @@ inline const std::unordered_map<std::string,TokenID> Lexer_Table = {
 	{"}",TokenID::CURLYCLOSEDBRACKET},
 	{"$",TokenID::BILL},
 	{",",TokenID::COMMA},
+	{":",TokenID::COLON},
 };
 /* Parser_Table
  * 
- * Start -> Function | Variable | Struct | enum
+ * Start -> Function | Variable | Struct | Enum
+ * Variable -> Type & Ident | Type & Ident & Assign | Ident & Ident | Ident & Ident & Assign
+ * RawType -> INT | UINT | U8 | U16 | U32 | U64 |
+ *            I8 | I16 | I32 | I64 | F32 | F64 |
+ *            FLOAT | DOUBLE | CHAR | VOID
+ * TypeModifier -> CONST | STAR | BoxOp
+ *                 CONST & TypeModifier | STAR & TypeModifier | BoxOp & TypeModifier
+ * BoxOp -> OPENSQUAREBRACKET & Expr & CLOSEDSQUAREBRACKET
+ * Type -> RawType | TypeModifier(s) & RawType
+ * Function -> FUNC & Ident & FuncRet & FuncArguments & Block
+ * FuncRet -> OPENSQUAREBRACKET & RetType & CLOSEDSQUAREBRACKET |
+ *            OPENSQUAREBRACKET & COLON & RetType & CLOSEDSQUAREBRACKET |
+ *            OPENSQUAREBRACKET & RetType & COLON & RetType & CLOSEDSQUAREBRACKET
+ * RetType -> Type | EXCLAMATION & Type
+ * FuncArguments -> OPENBRACKET & FuncArg & CLOSEDBRACKET
+ * FuncArg -> Type & Ident | Type & Ident & COMMA & FuncArg |
+ *            Type & Ident & Assign | Type & Ident & Assign & COMMA & FuncArg
+ * Assign -> (ADDASSIGN | SUBASSIGN | MULASSIGN | DIVASSIGN |
+ *            MODASSIGN | ASSIGN    | ANDASSIGN | ORASSIGN  |
+ *            XORASSIGN | SPECIALASSIGN) & Expr
+ * Stmt - > Variable | Variable & Stmt | Assignment | Assignment & Stmt |
+ *          If | If & Stmt | While | While & Stmt | For | For & Stmt
+ * Block -> OPENCURLYBRACKET & Stmt & CLOSEDCURLYBRACKET |
+ *          OPENCURLYBRACKET & Block & CLOSEDCURLYBRACKET
+ * Assignment -> Ident & Assign
+ * If -> IF & Condition & Block | IF & Condition & Block & Else
+ * Else -> ELSE & Block | ELSE & Condition & Block | ELSE & Condition & Block & Else
+ * While -> WHILE & Condition & Block
+ * For -> FOR & Stmt & Condition & Stmt & Block
+ * Condition -> OPENBRACKET & Expr & CLOSEDBRACKET
+ * Switch -> SWITCH & Condition & OPENCURLYBRACKET & Case & CLOSEDCURLYBRACKET |
+ *           SWITCH & Condition & OPENCURLYBRACKET & Case & CLOSEDCURLYBRACKET & Else
+ * Case -> OPENBRACKET & Pattern & CLOSEDBRACKET & Block |
+ *         OPENBRACKET & Pattern & CLOSEDBRACKET & Block & Case |
+ * Pattern -> Number | STAR |
+ *            Number & TILDE & Number |
+ *            Number & COMMA & Pattern |
+ *            Number & TILDE & Number & COMMA & Pattern |
+ *            Number & COMMA |
+ *            Number & TILDE & Number & COMMA |
  * 
- * 
- * 
- * 
+ * Expr -> Literal | UnaryOp | ExprGroup | Literal & BinOp & Expr | UnaryOp & BinOp & Expr |
+ *         ExprGroup & BinOp & Expr
+ * ExprGroup -> OPENBRACKET & Expr & CLOSEDBRACKET
+ * Literal -> Number | Ident | String
+ * UnaryOp -> STAR & Expr | EXCLAMATION & Expr | TILDE & Expr | PLUS & Expr | MINUS & Expr
+ * BinOp -> STAR | PLUS | MINUS | PERCENT | SLASH | LSHIFT | RSHIFT | LESSEQUAL | GREATEREQUAL | EQUAL |
+ *          NOTEQUAL | OR | AND | ACCESSOR | BILL | TILDE | BITAND | BITOR | BITXOR | LESS | GREATER | DOT
  * 
  * 
  * 
@@ -218,21 +303,21 @@ inline const std::unordered_map<std::string,TokenID> Lexer_Table = {
  * 
 */
 
-inline int priority(TokenID& id, bool unary){
+inline int checkPriority(TokenID id, bool unary){
 	if(unary){
 		switch(id){
-			case TokenID::DOT:   return 12;
 			case TokenID::STAR:  return 12;
 			case TokenID::EXCLAMATION: return 11;
 			case TokenID::PLUS:  return 11;
 			case TokenID::MINUS: return 11;
-			case TokenID::TILDA: return 11;
+			case TokenID::TILDE: return 11;
 		};
 	}else{
 		switch(id){
+			case TokenID::DOT:   return 12;
 			case TokenID::STAR:    return 10;
 			case TokenID::PERCENT: return 10;
-			case TokenID::RSLASH:  return 10;
+			case TokenID::SLASH:  return 10;
 			case TokenID::PLUS:    return 9;
 			case TokenID::MINUS:   return 9;
 			case TokenID::RSHIFT:  return 8;
@@ -265,6 +350,27 @@ inline bool isSymbol(char c){
 	};
 	return false;
 }
+inline bool isRawType(TokenID& id){
+	switch(id){
+		case TokenID::INT: return 1;
+		case TokenID::UINT:return 1;
+		case TokenID::U8:  return 1;
+		case TokenID::U16: return 1;
+		case TokenID::U32: return 1;
+		case TokenID::U64: return 1;
+		case TokenID::I8:  return 1;
+		case TokenID::I16: return 1;
+		case TokenID::I32: return 1;
+		case TokenID::I64: return 1;
+		case TokenID::F32: return 1;
+		case TokenID::F64: return 1;
+		case TokenID::FLOAT:  return 1;
+		case TokenID::DOUBLE: return 1;
+		case TokenID::CHAR: return 1;
+		case TokenID::VOID: return 1;
+	}
+	return 0;
+}
 
 struct Token{
 	TokenID id;
@@ -277,12 +383,20 @@ struct Token{
 struct SyntaxNode{
 	SyntaxID id;
 	std::string value;
-	Token* token;
-	std::vector<SyntaxNode*> child;
+	const Token* token;
+	SyntaxNode* A = nullptr;
+	SyntaxNode* B = nullptr;
+	SyntaxNode* C = nullptr;
+	SyntaxNode* D = nullptr;
+	SyntaxNode* E = nullptr;
+	SyntaxNode* F = nullptr;
+	SyntaxNode(SyntaxID ID){
+		id = ID;
+	}
 };
 
 inline std::vector<Token> tokens;
-
+inline SyntaxNode* RootSyntax = nullptr;
 
 
 

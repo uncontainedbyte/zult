@@ -1,10 +1,12 @@
 // 2 cpp START
 //>mk-obj "lexer.cpp" "objs/lexer.o"
+//>mk-obj "parser.cpp" "objs/parser.o"
 //args = "main.cpp objs/*.o"
 //mk-exe args "main"
 //END
 
 #include "lexer.h"
+#include "parser.h"
 #include <sstream>
 #include <fstream>
 #include <iostream>
@@ -65,12 +67,45 @@ void printPointersToTokens(int tab){
 	}
 	std::cout<<std::endl;
 }
-
+void printSyntaxTree(SyntaxNode* node = nullptr, int depth = 0, bool isLast = true, std::string prefix = ""){
+	if(node==nullptr) node = RootSyntax;
+	if(node==nullptr){ std::cout<<"no SyntaxTree!"<<std::endl; return; }
+	std::cout << prefix;
+	if(depth!=0) std::cout << (isLast ? "└── " : "├── ");
+	std::cout << SyntaxToString(node->id);
+	if(node->value!="") std::cout << " <" << node->value << ">";
+	std::cout << "\n";
+	// Print errors
+	//for (const auto& error : node->errorData) {
+		//std::cout << prefix << ((depth!=0)?(isLast ? "    " : "│   "):"") << "\033[31m[Error] " << error << "\033[0m\n";
+	//}
+	// Recur for children
+	
+	if(node->A!=nullptr){
+		printSyntaxTree(node->A, depth + 1, node->B==nullptr, prefix + ((depth!=0)?(isLast ? "    " : "│   "):""));
+	}
+	if(node->B!=nullptr){
+		printSyntaxTree(node->B, depth + 1, node->C==nullptr, prefix + ((depth!=0)?(isLast ? "    " : "│   "):""));
+	}
+	if(node->C!=nullptr){
+		printSyntaxTree(node->C, depth + 1, node->D==nullptr, prefix + ((depth!=0)?(isLast ? "    " : "│   "):""));
+	}
+	if(node->D!=nullptr){
+		printSyntaxTree(node->D, depth + 1, node->E==nullptr, prefix + ((depth!=0)?(isLast ? "    " : "│   "):""));
+	}
+	if(node->E!=nullptr){
+		printSyntaxTree(node->E, depth + 1, node->F==nullptr, prefix + ((depth!=0)?(isLast ? "    " : "│   "):""));
+	}
+	if(node->F!=nullptr){
+		printSyntaxTree(node->F, depth + 1, 1, prefix + ((depth!=0)?(isLast ? "    " : "│   "):""));
+	}
+	if(depth==0) std::cout << "\n";
+}
 
 int main(){
 	std::string fileName = "test.zlt";
-	uint debug = 0b11;
-	uint compile = 0b1;
+	uint debug = 0b111;
+	uint compile = 0b11;
 	
 	{
 		std::stringstream contents_stream;
@@ -82,10 +117,10 @@ int main(){
 	if(compile&0b1) lexer.lex();
 	if(debug&0b1) printTokens();
 	if(debug&0b10) printPointersToTokens(1);
+	if(compile&0b10) parser.parse();
+	if(debug&0b100) printSyntaxTree();
 	
 	
 	
-	
-	
-	
+	return 0;
 }

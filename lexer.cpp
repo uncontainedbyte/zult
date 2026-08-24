@@ -97,11 +97,29 @@ void Lexer::lex(){
 			inc();inc();
 			continue;
 		}else
+		if(peek().v=='/'&&(peek(1).h&&peek(1).v=='/')){
+			inc();inc();
+			column++;column++;
+			
+			while(peek().h){
+				if(peek().v=='\n'){
+					row++; column=1; inc();
+					line_buffer.pop_back();
+					file_lines.push_back(line_buffer);
+					line_buffer.clear();
+					break;
+				}else{
+					column++; inc();
+				}
+			}
+			continue;
+		}else
 		if(isSymbol(peek().v)){
 			column++;
 			buffer.push_back(inc());
 			while(peek().h && isSymbol(peek().v)){
 				if(peek().v=='/'&&(peek(1).h&&peek(1).v=='\'')) break;
+				if(peek().v=='/'&&(peek(1).h&&peek(1).v=='/')) break;
 				if(peek().v=='\"') break;
 				column++;
 				buffer.push_back(inc());
