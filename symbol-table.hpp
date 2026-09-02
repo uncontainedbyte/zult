@@ -21,21 +21,28 @@ enum class TokenID{
 	DOUBLE, STRUCT, WHILE, USING, DEFER, FLOAT, CONST,
 	ELSE, SELF, ENUM, UINT, CHAR, VOID, BOOL, FUNC,
 	INT, U16, U32, U64, I16, I32, I64, F32, F64,
-	FOR, I8, U8,
+	FOR, I8, U8, PACKED, ALIGN, 
 	
 	LSHIFTASSIGN, RSHIFTASSIGN, LSHIFT, RSHIFT,
 	ADDASSIGN, SUBASSIGN, MULASSIGN, DIVASSIGN, MODASSIGN, ANDASSIGN, ORASSIGN, XORASSIGN, 
-	LESSEQUAL, GREATEREQUAL, EQUAL, NOTEQUAL, OR, AND, SPECIALASSIGN, ACCESSOR, UNDERSCORE,
+	LESSEQUAL, GREATEREQUAL, EQUAL, NOTEQUAL, OR, AND, SPECIALASSIGN, ACCESSOR,
 	ASSIGN, BILL, COMMA, DOT, STAR, EXCLAMATION, TILDE, PLUS, MINUS, PERCENT, SLASH,
 	OPENSQUAREBRACKET, CLOSEDSQUAREBRACKET, OPENBRACKET, CLOSEDBRACKET,
-	CURLYOPENBRACKET, CURLYCLOSEDBRACKET, COLON,
+	OPENCURLYBRACKET, CLOSEDCURLYBRACKET, COLON,
 	BITAND, BITXOR, BITOR, LESS, GREATER, SEMI,
 };
 enum class SyntaxID{
-	Start,
+	Start,Error,
 	Expr, Number, Ident, UnaryOp, Dereference, BoolNot, BitwiseNot, Positive, Negitive, Literal, String,
-	GreaterEqual,LessEqual,Accessor,NotEqual,Multiply,Add,Subtract,Modulos,Divide,LeftShift,RightShift,
-	Equal,BoolOr,BoolAnd,PointerMath,BitNot,BitAnd,BitOr,BitXor,Less,Greater,MemberAccess
+	GreaterEqual, LessEqual, Accessor, NotEqual, Multiply, Add, Subtract, Modulos, Divide, LeftShift,
+	RightShift, Equal, BoolOr, BoolAnd, PointerMath, BitNot, BitAnd, BitOr, BitXor, Less, Greater,
+	MemberAccess, Int, Uint, U8, U16, U32, U64, I8, I16, I32, I64, F32, F64, Float, Double, Char, Void,
+	Const, Pointer, Box, Type, Variable, AddAssign, SubAssign, MulAssign, DivAssign, ModAssign, AndAssign,
+	OrAssign, XorAssign, SpecialAssign, Assign, Discardable, FuncRet, Function, FuncArg, Block, ErrRet,
+	Assignment, Stmt, If, Condition, Else, While, For, ForInit, ForUpdate, Return, Switch, Case, Pattern,
+	Wild, Enum, EnumBlock, EnumValue, Struct, StructBlock, StructStmt, StructDestructor, StructConstructor,
+	CallArg, Call, Indexer, MultiRetAssign, Cast, Packed, Align, Self, Defer, Operator, Global, Namespace,
+	Private, Using
 };
 #define CASE_TOKEN(NAME) case TokenID::NAME: return #NAME;
 #define CASE_SYNTAX(NAME) case SyntaxID::NAME: return #NAME;
@@ -47,9 +54,9 @@ inline std::string TokenToString(TokenID id){
 		CASE_TOKEN( Ident )
 		CASE_TOKEN( eof )
 		CASE_TOKEN( CLOSEDSQUAREBRACKET )
-		CASE_TOKEN( CURLYCLOSEDBRACKET )
+		CASE_TOKEN( CLOSEDCURLYBRACKET )
 		CASE_TOKEN( OPENSQUAREBRACKET )
-		CASE_TOKEN( CURLYOPENBRACKET )
+		CASE_TOKEN( OPENCURLYBRACKET )
 		CASE_TOKEN( CLOSEDBRACKET )
 		CASE_TOKEN( SPECIALASSIGN )
 		CASE_TOKEN( LSHIFTASSIGN )
@@ -57,7 +64,6 @@ inline std::string TokenToString(TokenID id){
 		CASE_TOKEN( GREATEREQUAL )
 		CASE_TOKEN( OPENBRACKET )
 		CASE_TOKEN( EXCLAMATION )
-		CASE_TOKEN( UNDERSCORE )
 		CASE_TOKEN( ADDASSIGN )
 		CASE_TOKEN( SUBASSIGN )
 		CASE_TOKEN( MULASSIGN )
@@ -82,8 +88,10 @@ inline std::string TokenToString(TokenID id){
 		CASE_TOKEN( RSHIFT )
 		CASE_TOKEN( SLASH )
 		CASE_TOKEN( ASSIGN )
+		CASE_TOKEN( PACKED )
 		CASE_TOKEN( BITAND )
 		CASE_TOKEN( BITXOR )
+		CASE_TOKEN( ALIGN )
 		CASE_TOKEN( WHILE )
 		CASE_TOKEN( USING )
 		CASE_TOKEN( DEFER )
@@ -162,8 +170,132 @@ inline std::string SyntaxToString(SyntaxID id){
 		CASE_SYNTAX( Less )
 		CASE_SYNTAX( Greater )
 		CASE_SYNTAX( MemberAccess )
+		CASE_SYNTAX( Int )
+		CASE_SYNTAX( Uint )
+		CASE_SYNTAX( U8 )
+		CASE_SYNTAX( U16 )
+		CASE_SYNTAX( U32 )
+		CASE_SYNTAX( U64 )
+		CASE_SYNTAX( I8 )
+		CASE_SYNTAX( I16 )
+		CASE_SYNTAX( I32 )
+		CASE_SYNTAX( I64 )
+		CASE_SYNTAX( F32 )
+		CASE_SYNTAX( F64 )
+		CASE_SYNTAX( Float )
+		CASE_SYNTAX( Double )
+		CASE_SYNTAX( Char )
+		CASE_SYNTAX( Void )
+		CASE_SYNTAX( Const )
+		CASE_SYNTAX( Pointer )
+		CASE_SYNTAX( Box )
+		CASE_SYNTAX( Type )
+		CASE_SYNTAX( Variable )
+		CASE_SYNTAX( AddAssign )
+		CASE_SYNTAX( SubAssign )
+		CASE_SYNTAX( MulAssign )
+		CASE_SYNTAX( DivAssign )
+		CASE_SYNTAX( ModAssign )
+		CASE_SYNTAX( AndAssign )
+		CASE_SYNTAX( OrAssign )
+		CASE_SYNTAX( XorAssign )
+		CASE_SYNTAX( SpecialAssign )
+		CASE_SYNTAX( Assign )
+		CASE_SYNTAX( Discardable )
+		CASE_SYNTAX( FuncRet )
+		CASE_SYNTAX( Function )
+		CASE_SYNTAX( FuncArg )
+		CASE_SYNTAX( Block )
+		CASE_SYNTAX( ErrRet )
+		CASE_SYNTAX( Assignment )
+		CASE_SYNTAX( Stmt )
+		CASE_SYNTAX( If )
+		CASE_SYNTAX( Condition )
+		CASE_SYNTAX( Else )
+		CASE_SYNTAX( While )
+		CASE_SYNTAX( For )
+		CASE_SYNTAX( ForInit )
+		CASE_SYNTAX( ForUpdate )
+		CASE_SYNTAX( Return )
+		CASE_SYNTAX( Switch )
+		CASE_SYNTAX( Case )
+		CASE_SYNTAX( Pattern )
+		CASE_SYNTAX( Wild )
+		CASE_SYNTAX( Enum )
+		CASE_SYNTAX( EnumBlock )
+		CASE_SYNTAX( EnumValue )
+		CASE_SYNTAX( Struct )
+		CASE_SYNTAX( StructBlock )
+		CASE_SYNTAX( StructStmt )
+		CASE_SYNTAX( StructDestructor )
+		CASE_SYNTAX( StructConstructor )
+		CASE_SYNTAX( Error )
+		CASE_SYNTAX( CallArg )
+		CASE_SYNTAX( Call )
+		CASE_SYNTAX( Indexer )
+		CASE_SYNTAX( MultiRetAssign )
+		CASE_SYNTAX( Cast )
+		CASE_SYNTAX( Packed )
+		CASE_SYNTAX( Align )
+		CASE_SYNTAX( Self )
+		CASE_SYNTAX( Defer )
+		CASE_SYNTAX( Operator )
+		CASE_SYNTAX( Global )
+		CASE_SYNTAX( Namespace )
+		CASE_SYNTAX( Private )
+		CASE_SYNTAX( Using )
 	};
 	return "Unhandled TokenToString Case";
+}
+inline std::string SymbolTokenToString(TokenID id){
+	switch(id){
+		case TokenID::LSHIFTASSIGN: return "<<=";
+		case TokenID::RSHIFTASSIGN: return ">>=";
+		case TokenID::LSHIFT: return "<<";
+		case TokenID::RSHIFT: return ">>";
+		case TokenID::ADDASSIGN: return "+=";
+		case TokenID::SUBASSIGN: return "-=";
+		case TokenID::MULASSIGN: return "*=";
+		case TokenID::DIVASSIGN: return "/=";
+		case TokenID::MODASSIGN: return "%=";
+		case TokenID::ANDASSIGN: return "&=";
+		case TokenID::ORASSIGN: return "|=";
+		case TokenID::XORASSIGN: return "^=";
+		case TokenID::LESSEQUAL: return "<=";
+		case TokenID::GREATEREQUAL: return ">=";
+		case TokenID::EQUAL: return "==";
+		case TokenID::NOTEQUAL: return "!=";
+		case TokenID::OR: return "||";
+		case TokenID::AND: return "&&";
+		case TokenID::SPECIALASSIGN: return ":=";
+		case TokenID::ACCESSOR: return "::";
+		case TokenID::ASSIGN: return "=";
+		case TokenID::BILL: return "$";
+		case TokenID::COMMA: return ",";
+		case TokenID::DOT: return ".";
+		case TokenID::STAR: return "*";
+		case TokenID::EXCLAMATION: return "!";
+		case TokenID::TILDE: return "~";
+		case TokenID::PLUS: return "+";
+		case TokenID::MINUS: return "-";
+		case TokenID::PERCENT: return "%";
+		case TokenID::SLASH: return "/";
+		case TokenID::OPENSQUAREBRACKET: return "[";
+		case TokenID::CLOSEDSQUAREBRACKET: return "]";
+		case TokenID::OPENBRACKET: return "(";
+		case TokenID::CLOSEDBRACKET: return ")";
+		case TokenID::OPENCURLYBRACKET: return "{";
+		case TokenID::CLOSEDCURLYBRACKET: return "}";
+		case TokenID::COLON: return ":";
+		case TokenID::BITAND: return "&";
+		case TokenID::BITXOR: return "^";
+		case TokenID::BITOR: return "|";
+		case TokenID::LESS: return "<";
+		case TokenID::GREATER: return ">";
+		case TokenID::SEMI: return ";";
+		default: return TokenToString(id);
+	};
+	return "";
 }
 inline const std::unordered_map<std::string,TokenID> Lexer_Table = {
 	{"namespace",TokenID::NAMESPACE},
@@ -173,6 +305,8 @@ inline const std::unordered_map<std::string,TokenID> Lexer_Table = {
 	{"switch",TokenID::SWITCH},
 	{"double",TokenID::DOUBLE},
 	{"struct",TokenID::STRUCT},
+	{"packed",TokenID::PACKED},
+	{"align",TokenID::ALIGN},
 	{"while",TokenID::WHILE},
 	{"using",TokenID::USING},
 	{"defer",TokenID::DEFER},
@@ -219,7 +353,6 @@ inline const std::unordered_map<std::string,TokenID> Lexer_Table = {
 	{"&&",TokenID::AND},
 	{":=",TokenID::SPECIALASSIGN},
 	{"::",TokenID::ACCESSOR},
-	{"_",TokenID::UNDERSCORE},
 	{"=",TokenID::ASSIGN},
 	{"[",TokenID::OPENSQUAREBRACKET},
 	{"]",TokenID::CLOSEDSQUAREBRACKET},
@@ -239,8 +372,8 @@ inline const std::unordered_map<std::string,TokenID> Lexer_Table = {
 	{";",TokenID::SEMI},
 	{"(",TokenID::OPENBRACKET},
 	{")",TokenID::CLOSEDBRACKET},
-	{"{",TokenID::CURLYOPENBRACKET},
-	{"}",TokenID::CURLYCLOSEDBRACKET},
+	{"{",TokenID::OPENCURLYBRACKET},
+	{"}",TokenID::CLOSEDCURLYBRACKET},
 	{"$",TokenID::BILL},
 	{",",TokenID::COMMA},
 	{":",TokenID::COLON},
@@ -248,18 +381,20 @@ inline const std::unordered_map<std::string,TokenID> Lexer_Table = {
 /* Parser_Table
  * 
  * Start -> Function | Variable | Struct | Enum
- * Variable -> Type & Ident | Type & Ident & Assign | Ident & Ident | Ident & Ident & Assign
+ * Variable -> Type & Ident & SEMI | Type & Ident & Assign & SEMI | Ident & Ident & SEMI |
+ *             Ident & Ident & Assign & SEMI
  * RawType -> INT | UINT | U8 | U16 | U32 | U64 |
  *            I8 | I16 | I32 | I64 | F32 | F64 |
  *            FLOAT | DOUBLE | CHAR | VOID
  * TypeModifier -> CONST | STAR | BoxOp
  *                 CONST & TypeModifier | STAR & TypeModifier | BoxOp & TypeModifier
  * BoxOp -> OPENSQUAREBRACKET & Expr & CLOSEDSQUAREBRACKET
- * Type -> RawType | TypeModifier(s) & RawType
+ * Type -> RawType | TypeModifier & RawType
  * Function -> FUNC & Ident & FuncRet & FuncArguments & Block
  * FuncRet -> OPENSQUAREBRACKET & RetType & CLOSEDSQUAREBRACKET |
  *            OPENSQUAREBRACKET & COLON & RetType & CLOSEDSQUAREBRACKET |
- *            OPENSQUAREBRACKET & RetType & COLON & RetType & CLOSEDSQUAREBRACKET
+ *            OPENSQUAREBRACKET & RetType & COLON & RetType & CLOSEDSQUAREBRACKET |
+ *            OPENSQUAREBRACKET & CLOSEDSQUAREBRACKET
  * RetType -> Type | EXCLAMATION & Type
  * FuncArguments -> OPENBRACKET & FuncArg & CLOSEDBRACKET
  * FuncArg -> Type & Ident | Type & Ident & COMMA & FuncArg |
@@ -268,14 +403,17 @@ inline const std::unordered_map<std::string,TokenID> Lexer_Table = {
  *            MODASSIGN | ASSIGN    | ANDASSIGN | ORASSIGN  |
  *            XORASSIGN | SPECIALASSIGN) & Expr
  * Stmt - > Variable | Variable & Stmt | Assignment | Assignment & Stmt |
- *          If | If & Stmt | While | While & Stmt | For | For & Stmt
- * Block -> OPENCURLYBRACKET & Stmt & CLOSEDCURLYBRACKET |
- *          OPENCURLYBRACKET & Block & CLOSEDCURLYBRACKET
- * Assignment -> Ident & Assign
+ *          If | If & Stmt | While | While & Stmt | For | For & Stmt | Block |
+ *          Block & Stmt | Return | Return & Stmt
+ * Block -> OPENCURLYBRACKET & Stmt & CLOSEDCURLYBRACKET
+ * Return -> RETURN & Expr & SEMI | RETURN & Expr & COMMA & Expr & SEMI
+ * Assignment -> Ident & Assign & SEMI
  * If -> IF & Condition & Block | IF & Condition & Block & Else
  * Else -> ELSE & Block | ELSE & Condition & Block | ELSE & Condition & Block & Else
  * While -> WHILE & Condition & Block
- * For -> FOR & Stmt & Condition & Stmt & Block
+ * For -> FOR & OPENBRACKET & ForInit & SEMI & Expr & SEMI & ForUpdate & CLOSEDBRACKET & Block
+ * ForInit -> Type & Ident | Type & Ident & Assign | Ident & Ident | Ident & Ident & Assign | Ident & Assign
+ * ForUpdate-> Ident & Assign
  * Condition -> OPENBRACKET & Expr & CLOSEDBRACKET
  * Switch -> SWITCH & Condition & OPENCURLYBRACKET & Case & CLOSEDCURLYBRACKET |
  *           SWITCH & Condition & OPENCURLYBRACKET & Case & CLOSEDCURLYBRACKET & Else
@@ -296,16 +434,23 @@ inline const std::unordered_map<std::string,TokenID> Lexer_Table = {
  * BinOp -> STAR | PLUS | MINUS | PERCENT | SLASH | LSHIFT | RSHIFT | LESSEQUAL | GREATEREQUAL | EQUAL |
  *          NOTEQUAL | OR | AND | ACCESSOR | BILL | TILDE | BITAND | BITOR | BITXOR | LESS | GREATER | DOT
  * 
+ * Enum -> ENUM & Ident & EnumBlock | ENUM & Type & Ident & EnumBlock
+ * EnumBlock -> OPENCURLYBRACKET & EnumValue & CLOSEDCURLYBRACKET
+ * EnumValue -> Ident | Ident & COMMA | Ident & COMMA & EnumValue
  * 
- * 
- * 
- * 
+ * Struct -> STRUCT & Ident & StructBlock
+ * StructBlock -> OPENCURLYBRACKET & StructStmt & CLOSEDCURLYBRACKET
+ * StructStmt -> StructDestructor | StructDestructor & StructStmt | Variable | Variable & Stmt |
+ *               StructConstructor | StructConstructor & StructStmt
+ * StructDestructor -> TILDE & Ident & FuncArguments & Block
+ * StructConstructor -> Ident & FuncArguments & Block
  * 
 */
 
 inline int checkPriority(TokenID id, bool unary){
 	if(unary){
 		switch(id){
+			case TokenID::BILL:  return 12;
 			case TokenID::STAR:  return 12;
 			case TokenID::EXCLAMATION: return 11;
 			case TokenID::PLUS:  return 11;
@@ -314,7 +459,6 @@ inline int checkPriority(TokenID id, bool unary){
 		};
 	}else{
 		switch(id){
-			case TokenID::DOT:   return 12;
 			case TokenID::STAR:    return 10;
 			case TokenID::PERCENT: return 10;
 			case TokenID::SLASH:  return 10;
@@ -380,6 +524,16 @@ struct Token{
 	int len;
 };
 
+enum class SyntaxErrorKind{
+	Expected,
+	Unexpected,
+	UnexpectedEOF
+};
+struct SyntaxError{
+	SyntaxErrorKind kind;
+	const Token* found;
+	std::vector<std::string> expected;
+};
 struct SyntaxNode{
 	SyntaxID id;
 	std::string value;
@@ -390,9 +544,8 @@ struct SyntaxNode{
 	SyntaxNode* D = nullptr;
 	SyntaxNode* E = nullptr;
 	SyntaxNode* F = nullptr;
-	SyntaxNode(SyntaxID ID){
-		id = ID;
-	}
+	SyntaxError* error;
+	SyntaxNode(SyntaxID ID){ id = ID; }
 };
 
 inline std::vector<Token> tokens;

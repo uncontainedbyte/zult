@@ -67,6 +67,11 @@ void Lexer::lex(){
 				
 				// error, no closing quotes
 				
+				std::cout<<"No Closing Quotes"<<std::endl;
+				
+				tokens.push_back({TokenID::eof,"",row,column,0});
+				
+				return;
 			}
 			column++;
 			inc();
@@ -93,6 +98,11 @@ void Lexer::lex(){
 				
 				// error, unclosed comment
 				
+				std::cout<<"Unclosed Comment"<<std::endl;
+				
+				tokens.push_back({TokenID::eof,"",row,column,0});
+				
+				return;
 			}
 			inc();inc();
 			continue;
@@ -207,13 +217,9 @@ void Lexer::refineSymbols(int Lcolumn){
 				tmp = buffer.substr(0,buffer.size()-s);
 				if(Lexer_Table.count(tmp)){
 					TokenID id = Lexer_Table.at(tmp);
-					tokens.push_back({id,"",row,Lcolumn,(column-s)-Lcolumn});
-					if(s==0){
-						buffer.clear();
-					}else{
-						buffer = buffer.substr(buffer.size()-s);
-						Lcolumn+=buffer.size()-s;
-					}
+					tokens.push_back({id,"",row,Lcolumn,(int)tmp.size()});
+					buffer = buffer.substr(buffer.size()-s);
+					Lcolumn+=tmp.size();
 					g = true;
 				}
 			}

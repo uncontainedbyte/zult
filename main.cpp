@@ -2,7 +2,7 @@
 //>mk-obj "lexer.cpp" "objs/lexer.o"
 //>mk-obj "parser.cpp" "objs/parser.o"
 //args = "main.cpp objs/*.o"
-//mk-exe args "main"
+//mk-exe args "zultc"
 //END
 
 #include "lexer.h"
@@ -73,7 +73,7 @@ void printSyntaxTree(SyntaxNode* node = nullptr, int depth = 0, bool isLast = tr
 	std::cout << prefix;
 	if(depth!=0) std::cout << (isLast ? "└── " : "├── ");
 	std::cout << SyntaxToString(node->id);
-	if(node->value!="") std::cout << " <" << node->value << ">";
+	if(node->value!=""&&node->id!=SyntaxID::Error) std::cout << " <" << node->value << ">";
 	std::cout << "\n";
 	// Print errors
 	//for (const auto& error : node->errorData) {
@@ -102,9 +102,77 @@ void printSyntaxTree(SyntaxNode* node = nullptr, int depth = 0, bool isLast = tr
 	if(depth==0) std::cout << "\n";
 }
 
+void printPointerToToken(const Token* token,int tab){
+	if(token->row>=file_lines.size()) return;
+	std::string line = file_lines[token->row];
+	int c=0;
+	for(int s=0;s<line.size();s++){
+		if(line[s]=='\t'){
+			line[s] = ' ';
+			line.insert(s, tab-1, ' ');
+			c+=tab-1;
+		}else{ break; }
+	}
+	std::string pointers(line.size(), ' ');
+	
+	for(int s=0;s<token->len;s++){
+		pointers[token->column+c+s - 1] = '^';
+	}
+	std::cout << "Line" << token->row << ": " << line << std::endl;
+	std::cout << "      "<< std::string(std::to_string(token->row).size(), ' ') << pointers << std::endl;
+}
+std::string Syntax_formatToken(const Token* found){
+	if(found->value!="") return "`"+found->value+"`";
+	return "`"+SymbolTokenToString(found->id)+"`";
+}
+std::string Syntax_formatFound(const Token* found){
+	return Syntax_formatToken(found);
+}
+std::string Syntax_formatExpected(const std::vector<std::string>& expected){
+	std::string out;
+	for(int s=0;s<expected.size();s++){
+		out += "`"+expected[s]+"`";
+		if(s+1<expected.size()) out += " or ";
+	}
+	return out;
+}
+std::string Syntax_formatError(const SyntaxError* error){
+	switch(error->kind){
+		case SyntaxErrorKind::Expected:
+			return "expected " + Syntax_formatExpected(error->expected) +
+			       ", found "  + Syntax_formatToken(error->found);
+		case SyntaxErrorKind::Unexpected:
+			return "unexpected " + Syntax_formatToken(error->found);
+		case SyntaxErrorKind::UnexpectedEOF:
+			return "unexpected end of file, expected " + Syntax_formatExpected(error->expected);
+	}
+	return "this should not be seen.";
+}
+void printSyntaxError(SyntaxNode* node){
+	if(node->error==nullptr) return;
+	
+	std::cout << "line-" << node->error->found->row << ":" << node->error->found->column;
+	std::cout << std::endl;
+	std::cout << Syntax_formatError(node->error);
+	std::cout << std::endl;
+	if(node->error->kind != SyntaxErrorKind::UnexpectedEOF) printPointerToToken(node->error->found,1);
+}
+void printSyntaxErrors(SyntaxNode* node = nullptr){
+	if(node==nullptr) node = RootSyntax;
+	if(node==nullptr){ return; }
+	if(node->id==SyntaxID::Error) printSyntaxError(node);
+	
+	if(node->A!=nullptr){ printSyntaxErrors(node->A); }
+	if(node->B!=nullptr){ printSyntaxErrors(node->B); }
+	if(node->C!=nullptr){ printSyntaxErrors(node->C); }
+	if(node->D!=nullptr){ printSyntaxErrors(node->D); }
+	if(node->E!=nullptr){ printSyntaxErrors(node->E); }
+	if(node->F!=nullptr){ printSyntaxErrors(node->F); }
+}
+
 int main(){
 	std::string fileName = "test.zlt";
-	uint debug = 0b111;
+	uint debug = 0b1111;
 	uint compile = 0b11;
 	
 	{
@@ -119,6 +187,7 @@ int main(){
 	if(debug&0b10) printPointersToTokens(1);
 	if(compile&0b10) parser.parse();
 	if(debug&0b100) printSyntaxTree();
+	if(debug&0b1000) printSyntaxErrors();
 	
 	
 	
